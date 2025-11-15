@@ -45,10 +45,12 @@ namespace gpu_lab {
     size_t size_ = {};
   };
 
-  template<typename T, MemoryLocation SrcLoc, MemoryLocation DstLoc>
+  template<typename SrcT, MemoryLocation SrcLoc, typename DstT, MemoryLocation DstLoc>
+    requires (std::is_same_v<std::remove_cv_t<SrcT>, std::remove_cv_t<DstT>>
+              && !std::is_const_v<DstT>)
   void copy(
-    BufferView<const T, SrcLoc> src,
-    BufferView<T, DstLoc>       dst
+    BufferView<SrcT, SrcLoc> src,
+    BufferView<DstT, DstLoc> dst
   )
   {
     if (src.size() != dst.size()) {
@@ -59,18 +61,20 @@ namespace gpu_lab {
       cudaMemcpy(
         dst.data(),
         src.data(),
-        src.size() * sizeof(T),
+        src.size() * sizeof(SrcT),
         get_memcpy_kind<SrcLoc, DstLoc>()
       )
     );
   }
 
-  template<typename T, MemoryLocation SrcLoc, MemoryLocation DstLoc>
-    requires (SrcLoc == MemoryLocation::DEVICE || DstLoc == MemoryLocation::DEVICE)
+  template<typename SrcT, MemoryLocation SrcLoc, typename DstT, MemoryLocation DstLoc>
+    requires ((SrcLoc == MemoryLocation::DEVICE || DstLoc == MemoryLocation::DEVICE)
+              && std::is_same_v<std::remove_cv_t<SrcT>, std::remove_cv_t<DstT>>
+              && !std::is_const_v<DstT>)
   void copy_async(
-    BufferView<const T, SrcLoc> src,
-    BufferView<T, DstLoc>       dst,
-    cudaStream_t                stream = cudaStreamDefault
+    BufferView<SrcT, SrcLoc> src,
+    BufferView<DstT, DstLoc> dst,
+    cudaStream_t             stream = cudaStreamDefault
   )
   {
     if (src.size() != dst.size()) {
@@ -81,7 +85,7 @@ namespace gpu_lab {
       cudaMemcpyAsync(
         dst.data(),
         src.data(),
-        src.size() * sizeof(T),
+        src.size() * sizeof(SrcT),
         get_memcpy_kind<SrcLoc, DstLoc>(),
         stream
       )
