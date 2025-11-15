@@ -13,6 +13,8 @@ namespace gpu_lab {
   class BufferView {
   public:
     using element_type = T;
+    using reference = T&;
+    using const_reference = const T&;
     using value_type = std::remove_cv_t<T>;
 
     __host__ __device__ BufferView(T* data, size_t size) noexcept
@@ -24,6 +26,18 @@ namespace gpu_lab {
 
     __host__ __device__ size_t size() const noexcept { return size_; }
     __host__ __device__ bool empty() const noexcept { return size_ == 0; }
+
+    __host__ __device__ const_reference operator[](size_t i) const noexcept
+    {
+      assert(i <= size_);
+      return data_[i];
+    }
+  
+    __host__ __device__ reference operator[](size_t i) noexcept
+    {
+      assert(i <= size_);
+      return data_[i];
+    }
 
     __host__ __device__ BufferView subspan(size_t offset, size_t count) const noexcept {
       assert((offset + count) <= size_);
