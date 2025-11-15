@@ -1,0 +1,32 @@
+#pragma once
+
+#include <memory>
+#include <type_traits>
+#include <cuda_runtime.h>
+#include "cuda_check.hpp"
+
+
+namespace gpu_lab {
+
+  namespace detail {
+
+    struct DevicePtrDeleter {
+      void operator()(void* dev_ptr) const noexcept {
+        cudaFree(dev_ptr);
+      }
+    };
+
+  } // namespace detail
+
+  template<typename T>
+  using UniqueDevicePtr = std::unique_ptr<T, detail::DevicePtrDeleter>;
+
+  template<typename T>
+    requires std::is_unbounded_array_v<T>
+  auto make_unique_device_ptr(size_t n) {
+    T* dev_ptr = {};
+    CUDA_CHECK(cudaMalloc(&dev_ptr, n * sizeof(T)));
+    return UniqueDevicePtr<T>{dev_ptr};
+  }
+
+}
