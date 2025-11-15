@@ -76,11 +76,8 @@ namespace gpu_lab {
     size_t size() const noexcept { return size_; }
     bool empty() const noexcept { return size_ == 0; }
 
-    auto view() const { return BufferView<const T, Loc>{data(), size()}; }
-    auto view() { return BufferView<T, Loc>{data(), size()}; }
-  
-    operator BufferView<const T, Loc>() const { return view(); }
-    operator BufferView<T, Loc>() { return view(); }
+    auto view() const noexcept { return BufferView<const T, Loc>{data(), size()}; }
+    auto view() noexcept { return BufferView<T, Loc>{data(), size()}; }
 
   private:
     handle_type ptr_ = {};
@@ -98,8 +95,9 @@ namespace gpu_lab {
 
   template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
   auto clone(BufferView<T, SrcLoc> src) {
-    Buffer<T, Loc> out{src.size()};
-    copy(src, out);
+    using U = typename BufferView<T, SrcLoc>::value_type;
+    Buffer<U, Loc> out{src.size()};
+    copy(src, out.view());
     return out;
   }
 
@@ -120,8 +118,9 @@ namespace gpu_lab {
 
   template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
   auto clone_async(BufferView<T, SrcLoc> src, cudaStream_t stream = cudaStreamDefault) {
-    Buffer<T, Loc> out{src.size()};
-    copy_async(src, out);
+    using U = typename BufferView<T, SrcLoc>::value_type;
+    Buffer<U, Loc> out{src.size()};
+    copy_async(src, out.view());
     return out;
   }
 
