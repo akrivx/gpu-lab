@@ -87,16 +87,6 @@ namespace gpu_lab {
     size_t         size_ = {};
   };
 
-  template<typename T, MemoryLocation Loc>
-  auto view(const Buffer<T, Loc>& buf) noexcept {
-    return BufferView<const T, Loc>{buf};
-  }
-
-  template<typename T, MemoryLocation Loc>
-  auto view(Buffer<T, Loc>& buf) noexcept {
-    return BufferView<T, Loc>{buf};
-  }
-
   template<typename T>
   using DeviceBuffer = Buffer<T, MemoryLocation::DEVICE>;
 
