@@ -1,43 +1,36 @@
 #pragma once
 
-#include <cstddef>
-#include <cassert>
-#include <memory>
-#include <stdexcept>
-#include <type_traits>
-#include <utility>
-#include <span>
 #include "device_ptr.hpp"
 #include "pinned_ptr.hpp"
+#include "buffer_view.hpp"
 
 
 namespace gpu_lab {
 
-  enum class BufferLocation { HOST_PAGEABLE, HOST_PINNED, DEVICE };
-
   namespace detail {
 
-    template<typename T, BufferLocation loc>
+    template<typename T, MemoryLocation Loc>
     struct BufferTraits {
       using element_type = T;
-      using pointer_handle = std::conditional_t<
-        loc == BufferLocation::HOST_PAGEABLE,
+      using handle_type = std::conditional_t<
+        Loc == MemoryLocation::HOST_PAGEABLE,
         std::unique_ptr<T[]>,
         std::conditional_t<
-          loc == BufferLocation::HOST_PINNED,
+          Loc == MemoryLocation::HOST_PINNED,
           UniquePinnedPtr<T[]>,
           UniqueDevicePtr<T[]>
         >
       >;
 
       static auto allocate(size_t size) {
-        if constexpr (loc == BufferLocation::HOST_PAGEABLE) {
+        if constexpr (Loc == MemoryLocation::HOST_PAGEABLE) {
           return std::make_unique_for_overwrite<T[]>(size);
         }
-        else if constexpr (loc == BufferLocation::HOST_PINNED) {
+        else if constexpr (Loc == MemoryLocation::HOST_PINNED) {
           return make_unique_pinned_ptr<T[]>(size);
         }
-        else { // BufferLocation::DEVICE
+        else { // MemoryLocation::DEVICE
+          static_assert(Loc == MemoryLocation::DEVICE);
           return make_unique_device_ptr<T[]>(size);
         }
       }
@@ -45,12 +38,12 @@ namespace gpu_lab {
 
   } // namespace detail
 
-  template<typename T, BufferLocation Loc>
+  template<typename T, MemoryLocation Loc>
   class Buffer {
     using traits = detail::BufferTraits<T, Loc>;
     
   public:
-    using pointer_handle = typename traits::pointer_handle;
+    using handle_type = typename traits::handle_type;
     using element_type = typename traits::element_type;
 
     Buffer() = default;
@@ -66,12 +59,12 @@ namespace gpu_lab {
       , size_{size}
     {}
 
-    Buffer(pointer_handle&& ptr, size_t size)
+    Buffer(handle_type&& ptr, size_t size)
       : ptr_{std::move(ptr)}
       , size_{size}
     {}
 
-    pointer_handle release() {
+    handle_type release() {
       auto ptr = std::exchange(ptr_, {});
       size_ = {};
       return std::move(ptr);
@@ -83,137 +76,78 @@ namespace gpu_lab {
     size_t size() const noexcept { return size_; }
     bool empty() const noexcept { return size_ == 0; }
 
+    auto view() const { return BufferView<const T, Loc>{data(), size()}; }
+    auto view() { return BufferView<T, Loc>{data(), size()}; }
+  
+    operator BufferView<const T, Loc>() const { return view(); }
+    operator BufferView<T, Loc>() { return view(); }
+
   private:
-    pointer_handle ptr_ = {};
+    handle_type ptr_ = {};
     size_t         size_ = {};
   };
 
-  template<typename T, BufferLocation Loc>
-  struct BufferView {
-    using element_type = T;
-
-    BufferView(Buffer<std::remove_const_t<T>, Loc>& buf) noexcept
-      requires (!std::is_const_v<T>)
-      : data_{buf.data()}
-      , size_{buf.size()}
-    {}
-
-    BufferView(const Buffer<std::remove_const_t<T>, Loc>& buf) noexcept
-      requires (std::is_const_v<T>)
-      : data_{buf.data()}
-      , size_{buf.size()}
-    {}
-  
-    BufferView(T* data, size_t size) noexcept
-      : data_{data}
-      , size_{size}
-    {}
-
-    T* data() const noexcept { return data_; }
-    size_t size() const noexcept { return size_; }
-    bool empty() const noexcept { return size_ == 0; }
-
-    BufferView subspan(size_t offset, size_t count) const noexcept {
-      assert((offset + count) <= size_);
-      return {data_ + offset, count};
-    }
-
-    BufferView take(size_t count) const noexcept {
-      assert(count <= size_);
-      return subspan(0, count);
-    }
-
-    BufferView drop(size_t count) const noexcept {
-      assert(count <= size_);
-      return subspan(count, size_ - count);
-    }
-
-    T*     data_ = {};
-    size_t size_ = {};
-  };
-
-  template<typename T, BufferLocation Loc>
+  template<typename T, MemoryLocation Loc>
   auto view(const Buffer<T, Loc>& buf) noexcept {
     return BufferView<const T, Loc>{buf};
   }
 
-  template<typename T, BufferLocation Loc>
+  template<typename T, MemoryLocation Loc>
   auto view(Buffer<T, Loc>& buf) noexcept {
     return BufferView<T, Loc>{buf};
   }
 
-  namespace detail {
-
-    template<BufferLocation SrcLoc, BufferLocation DstLoc>
-    constexpr auto get_memcpy_kind() {
-      if constexpr (SrcLoc == BufferLocation::DEVICE) {
-        if constexpr (DstLoc == BufferLocation::DEVICE) {
-          return cudaMemcpyDeviceToDevice;
-        }
-        else {
-          return cudaMemcpyDeviceToHost;
-        }
-      }
-      else if constexpr (DstLoc == BufferLocation::DEVICE) {
-        return cudaMemcpyHostToDevice;
-      }
-      else {
-        return cudaMemcpyHostToHost;
-      }
-    }
-
-  }
-
-  template<typename T, BufferLocation SrcLoc, BufferLocation DstLoc>
-  void copy(
-    BufferView<const T, SrcLoc> src,
-    BufferView<T, DstLoc>       dst
-  )
-  {
-    if (src.size() != dst.size()) {
-      throw std::runtime_error{"buffer copy size mismatch"};
-    }
-
-    CUDA_CHECK(
-      cudaMemcpy(
-        dst.data(),
-        src.data(),
-        src.size() * sizeof(T),
-        get_memcpy_kind<SrcLoc, DstLoc>()
-      )
-    );
-  }
-
-  template<typename T, BufferLocation SrcLoc, BufferLocation DstLoc>
-    requires (SrcLoc == BufferLocation::DEVICE || DstLoc == BufferLocation::DEVICE)
-  void copy_async(
-    BufferView<const T, SrcLoc> src,
-    BufferView<T, DstLoc>       dst,
-    cudaStream_t                stream = cudaStreamDefault
-  )
-  {
-    if (src.size() != dst.size()) {
-      throw std::runtime_error{"buffer copy async size mismatch"};
-    }
-
-    CUDA_CHECK(
-      cudaMemcpyAsync(
-        dst.data(),
-        src.data(),
-        src.size() * sizeof(T),
-        get_memcpy_kind<SrcLoc, DstLoc>(),
-        stream
-      )
-    );
-  }
+  template<typename T>
+  using DeviceBuffer = Buffer<T, MemoryLocation::DEVICE>;
 
   template<typename T>
-  using DeviceBuffer = Buffer<T, BufferLocation::DEVICE>;
+  using HostPinnedBuffer = Buffer<T, MemoryLocation::HOST_PINNED>;
 
   template<typename T>
-  using HostPinnedBuffer = Buffer<T, BufferLocation::HOST_PINNED>;
+  using HostPageableBuffer = Buffer<T, MemoryLocation::HOST_PAGEABLE>;
 
-  template<typename T>
-  using HostPageableBuffer = Buffer<T, BufferLocation::HOST_PAGEABLE>;
+  template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
+  auto clone(BufferView<T, SrcLoc> src) {
+    Buffer<T, Loc> out{src.size()};
+    copy(src, out);
+    return out;
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_device_buffer(BufferView<T, Loc> src) {
+    return clone<MemoryLocation::DEVICE>(src);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_host_pageable_buffer(BufferView<T, Loc> src) {
+    return clone<MemoryLocation::HOST_PAGEABLE>(src);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_host_pinned_buffer(BufferView<T, Loc> src) {
+    return clone<MemoryLocation::HOST_PINNED>(src);
+  }
+
+  template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
+  auto clone_async(BufferView<T, SrcLoc> src, cudaStream_t stream = cudaStreamDefault) {
+    Buffer<T, Loc> out{src.size()};
+    copy_async(src, out);
+    return out;
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_device_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
+    return clone_async<MemoryLocation::DEVICE>(src, stream);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_host_pageable_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
+    return clone_async<MemoryLocation::HOST_PAGEABLE>(src, stream);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_host_pinned_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
+    return clone_async<MemoryLocation::HOST_PINNED>(src, stream);
+  }
 
 }
