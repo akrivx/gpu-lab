@@ -24,8 +24,9 @@ namespace gpu_lab {
   template<typename T>
     requires std::is_unbounded_array_v<T>
   auto make_unique_pinned_ptr(size_t n) {
-    T* pinned_ptr = {};
-    CUDA_CHECK(cudaMallocHost(&pinned_ptr, n * sizeof(T)));
+    using U = std::remove_extent_t<T>;
+    U* pinned_ptr = {};
+    CUDA_CHECK(cudaMallocHost(&pinned_ptr, n * sizeof(U)));
     return UniquePinnedPtr<T>{pinned_ptr};
   }
 

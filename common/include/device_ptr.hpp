@@ -24,8 +24,9 @@ namespace gpu_lab {
   template<typename T>
     requires std::is_unbounded_array_v<T>
   auto make_unique_device_ptr(size_t n) {
-    T* dev_ptr = {};
-    CUDA_CHECK(cudaMalloc(&dev_ptr, n * sizeof(T)));
+    using U = std::remove_extent_t<T>;
+    U* dev_ptr = {};
+    CUDA_CHECK(cudaMalloc(&dev_ptr, n * sizeof(U)));
     return UniqueDevicePtr<T>{dev_ptr};
   }
 
