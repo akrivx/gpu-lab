@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <string_view>
 #include <cuda_runtime.h>
+#include <vector>
+#include <functional>
 
 #include "buffer.hpp"
 #include "buffer_view.hpp"
@@ -72,73 +74,50 @@ namespace {
     });
   }
 
-  void report_stats(
-    std::string_view label,
-    size_t total_bytes,
-    std::tuple<float, float, float> min_max_avg_ms
-  ) {
-      auto bw_from_ms = [&](float ms) {
-        const float sec = ms / 1000.0f;
-        return (total_bytes / sec) / 1e9f; // GB/s
-      };
-  
-      const float bw_best  = bw_from_ms(std::get<0>(min_max_avg_ms)); // fastest -> highest BW
-      const float bw_worst = bw_from_ms(std::get<1>(min_max_avg_ms)); // slowest -> lowest BW
-      const float bw_avg   = bw_from_ms(std::get<2>(min_max_avg_ms));
-  
-      std::printf(
-          "%s\n"
-          "  Time (ms):\n"
-          "    min  = %.3f\n"
-          "    max  = %.3f\n"
-          "    avg  = %.3f\n"
-          "  Bandwidth (GB/s):\n"
-          "    best = %.2f\n"
-          "    worst= %.2f\n"
-          "    avg  = %.2f\n\n",
-          label.data(),
-          std::get<0>(min_max_avg_ms),
-          std::get<1>(min_max_avg_ms),
-          std::get<2>(min_max_avg_ms),
-          bw_best,
-          bw_worst,
-          bw_avg
-      );
-  }
-  
-
   void run_experiments(DeviceBufferView<const uint4> src, DeviceBufferView<uint4> dst) {
-    const auto nbytes = src.size() * sizeof(uint4);
+    const auto total_bytes = src.size() * sizeof(uint4);
 
-    const auto u8_ms = run_memcpy_kernel_and_get_ms(
-      src.as<const uint8_t>(),
-      dst.as<uint8_t>()
-    );
-    report_stats("u8 memcpy", nbytes, u8_ms);
-    
-    const auto u16_ms = run_memcpy_kernel_and_get_ms(
-      src.as<const uint16_t>(),
-      dst.as<uint16_t>()
-    );
-    report_stats("u16 memcpy", nbytes, u16_ms);
-    
-    const auto u32_ms = run_memcpy_kernel_and_get_ms(
-      src.as<const uint32_t>(),
-      dst.as<uint32_t>()
-    );
-    report_stats("u32 memcpy", nbytes, u32_ms);
-    
-    const auto u32x4_ms = run_memcpy_kernel_and_get_ms(
-      src.as_const(),
-      dst
-    ); 
-    report_stats("u32x4 memcpy", nbytes, u32x4_ms);
+    const auto gbps_from_ms = [=](float ms) {
+      const float sec = ms / 1000.0f;
+      return (total_bytes / sec) / 1e9f; // GB/s
+    };
 
-    const auto u32x4_builtin_ms = run_builtin_memcpy_and_get_ms(
-      src.as_const(),
-      dst
+    const std::vector<std::pair<std::string, std::function<std::tuple<float, float, float>()>>> experiments = {
+      {"u8",      [&]() { return run_memcpy_kernel_and_get_ms(src.as<const uint8_t>(), dst.as<uint8_t>()); }},
+      {"u16",     [&]() { return run_memcpy_kernel_and_get_ms(src.as<const uint16_t>(), dst.as<uint16_t>()); }},
+      {"u32",     [&]() { return run_memcpy_kernel_and_get_ms(src.as<const uint32_t>(), dst.as<uint32_t>()); }},
+      {"uint4",   [&]() { return run_memcpy_kernel_and_get_ms(src.as_const(), dst); }},
+      {"builtin", [&]() { return run_builtin_memcpy_and_get_ms(src.as_const(), dst); }},
+    };
+
+    const char* sep = 
+      "+---------+------------+------------+------------+------------+------------+------------+\n";
+
+    std::printf("%s", sep);
+    std::printf(
+      "|  Type   |  Min ms    |  Avg ms    |  Max ms    | Best GB/s  | Avg GB/s   | Worst GB/s |\n"
     );
-    report_stats("u32x4 built-in memcpy", nbytes, u32x4_builtin_ms);
+    std::printf("%s", sep);
+
+    for (const auto& [type_label, f]: experiments) {
+      const auto [min_ms, max_ms, avg_ms] = f();
+
+      const float best_gbps  = gbps_from_ms(min_ms); // fastest -> highest BW
+      const float worst_gbps = gbps_from_ms(max_ms); // slowest -> lowest BW
+      const float avg_gbps   = gbps_from_ms(avg_ms);
+      std::printf(
+        "| %-7s | %10.3f | %10.3f | %10.3f | %10.1f | %10.1f | %10.1f |\n",
+        type_label.c_str(),
+        min_ms,
+        avg_ms,
+        max_ms,
+        best_gbps,
+        avg_gbps,
+        worst_gbps
+      );
+    }
+
+    std::printf("%s", sep);
   }
 
 }
