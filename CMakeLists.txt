@@ -39,16 +39,20 @@ add_library(gpu_lab_options INTERFACE)
 # C++20 everywhere
 target_compile_features(gpu_lab_options INTERFACE cxx_std_20)
 
-# Warnings & misc per compiler
+# -------- Host (C++) flags, language-guarded --------
 if (MSVC)
-  target_compile_options(gpu_lab_options INTERFACE
+  set(GPU_LAB_MSVC_CXX_FLAGS
     /W4           # high warnings
     /permissive-  # stricter standard conformance
     /EHsc         # C++ exceptions
   )
+
+  target_compile_options(gpu_lab_options INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:${GPU_LAB_MSVC_CXX_FLAGS}>
+  )
 else()
   target_compile_options(gpu_lab_options INTERFACE
-    -Wall -Wextra -Wpedantic
+    $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Wpedantic>
   )
 endif()
 
