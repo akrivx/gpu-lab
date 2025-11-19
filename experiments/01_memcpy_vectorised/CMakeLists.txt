@@ -1,5 +1,5 @@
 add_executable(memcpy_vectorised
-  # kernels.cu
+  kernels.cu
   main.cpp
 )
 
