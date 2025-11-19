@@ -72,49 +72,73 @@ namespace {
     });
   }
 
-  void print_timings(std::string_view header, float min_ms, float max_ms, float avg_ms) {
-    std::cout << header << "(min=" << min_ms << ", max=" << max_ms << ", avg=" << avg_ms << ") [ms]" << std::endl;
+  void report_stats(
+    std::string_view label,
+    size_t total_bytes,
+    std::tuple<float, float, float> min_max_avg_ms
+  ) {
+      auto bw_from_ms = [&](float ms) {
+        const float sec = ms / 1000.0f;
+        return (total_bytes / sec) / 1e9f; // GB/s
+      };
+  
+      const float bw_best  = bw_from_ms(std::get<0>(min_max_avg_ms)); // fastest -> highest BW
+      const float bw_worst = bw_from_ms(std::get<1>(min_max_avg_ms)); // slowest -> lowest BW
+      const float bw_avg   = bw_from_ms(std::get<2>(min_max_avg_ms));
+  
+      std::printf(
+          "%s\n"
+          "  Time (ms):\n"
+          "    min  = %.3f\n"
+          "    max  = %.3f\n"
+          "    avg  = %.3f\n"
+          "  Bandwidth (GB/s):\n"
+          "    best = %.2f\n"
+          "    worst= %.2f\n"
+          "    avg  = %.2f\n\n",
+          label.data(),
+          std::get<0>(min_max_avg_ms),
+          std::get<1>(min_max_avg_ms),
+          std::get<2>(min_max_avg_ms),
+          bw_best,
+          bw_worst,
+          bw_avg
+      );
   }
-
-  void print_timings(std::string_view header, std::tuple<float, float, float> min_max_avg_ms) {
-    print_timings(
-      header,
-      std::get<0>(min_max_avg_ms),
-      std::get<1>(min_max_avg_ms),
-      std::get<2>(min_max_avg_ms)
-    );
-  }
+  
 
   void run_experiments(DeviceBufferView<const uint4> src, DeviceBufferView<uint4> dst) {
+    const auto nbytes = src.size() * sizeof(uint4);
+
     const auto u8_ms = run_memcpy_kernel_and_get_ms(
       src.as<const uint8_t>(),
       dst.as<uint8_t>()
     );
-    print_timings("u8 copy: ", u8_ms);
+    report_stats("u8 memcpy", nbytes, u8_ms);
     
     const auto u16_ms = run_memcpy_kernel_and_get_ms(
       src.as<const uint16_t>(),
       dst.as<uint16_t>()
     );
-    print_timings("u16 copy: ", u16_ms);
+    report_stats("u16 memcpy", nbytes, u16_ms);
     
     const auto u32_ms = run_memcpy_kernel_and_get_ms(
       src.as<const uint32_t>(),
       dst.as<uint32_t>()
     );
-    print_timings("u32 copy: ", u32_ms);
+    report_stats("u32 memcpy", nbytes, u32_ms);
     
     const auto u32x4_ms = run_memcpy_kernel_and_get_ms(
       src.as_const(),
       dst
     ); 
-    print_timings("u32x4 copy: ", u32x4_ms);
+    report_stats("u32x4 memcpy", nbytes, u32x4_ms);
 
     const auto u32x4_builtin_ms = run_builtin_memcpy_and_get_ms(
       src.as_const(),
       dst
     );
-    print_timings("u32x4 built-in copy: ", u32x4_builtin_ms);
+    report_stats("u32x4 built-in memcpy", nbytes, u32x4_builtin_ms);
   }
 
 }
