@@ -6,6 +6,7 @@
 
 #include "buffer.hpp"
 #include "buffer_view.hpp"
+#include "cuda_check.hpp"
 #include "with_timer.hpp"
 #include "kernels.cuh"
 
@@ -14,42 +15,61 @@ using namespace gpu_lab;
 
 namespace {
 
-  template<typename T>
-  auto run_kernel_and_get_ms(
-    DeviceBufferView<const T> src,
-    DeviceBufferView<T> dst,
-    uint32_t threads_per_block = 1024,
-    int num_iter = 100
+  template<typename F>
+  auto with_timer_and_stats(
+    F&& f,
+    cudaStream_t stream = cudaStreamDefault,
+    int num_iter = 100,
+    int num_warmup_iter = 100
   ) {
-    if (src.size() % threads_per_block) {
-      throw std::runtime_error{"Buffer size must be a multiple of number of threads per block."};
-    }
-
-    constexpr int NUM_WARM_UP_ITER = 100;
-
-    dim3 grid{static_cast<uint32_t>(src.size() / threads_per_block)};
-    dim3 block{threads_per_block};
-
     // Warmup
-    for (int i = 0; i < NUM_WARM_UP_ITER; ++i) {
-      launch_memcpy_kernel(grid, block, src, dst);
+    if (num_warmup_iter > 0) {
+      for (int i = 0; i < num_warmup_iter; ++i) {
+        f(stream);
+      }
+      CUDA_CHECK(cudaDeviceSynchronize());
     }
 
     float min_ms = FLT_MAX;
     float max_ms = 0.0f;
-    float avg_ms = 0.0f;
+    float total_ms = 0.0f;
 
     for (int i = 0; i < num_iter; ++i) {
-      const auto ms = with_timer([&](cudaStream_t) {
-        launch_memcpy_kernel(grid, block, src, dst);
-      });
+      const auto ms = with_timer(f, stream);
       min_ms = std::min(min_ms, ms);
       max_ms = std::max(max_ms, ms);
-      avg_ms += ms;
+      total_ms += ms;
     }
 
-    avg_ms /= num_iter;
-    return std::make_tuple(min_ms, max_ms, avg_ms);
+    return std::make_tuple(min_ms, max_ms, total_ms / num_iter);
+  }
+
+  template<typename T>
+  auto run_memcpy_kernel_and_get_ms(
+    DeviceBufferView<const T> src,
+    DeviceBufferView<T> dst,
+    uint32_t threads_per_block = 1024
+  ) {
+    if (src.size() % threads_per_block) {
+      throw std::runtime_error{"Buffer size must be a multiple of number of threads per block."};
+    }
+  
+    dim3 grid{static_cast<uint32_t>(src.size() / threads_per_block)};
+    dim3 block{threads_per_block};
+
+    return with_timer_and_stats([&](cudaStream_t) {
+      launch_memcpy_kernel(grid, block, src, dst);
+    });
+  }
+
+  template<typename T>
+  auto run_builtin_memcpy_and_get_ms(
+    DeviceBufferView<const T> src,
+    DeviceBufferView<T> dst
+  ) {
+    return with_timer_and_stats([&](cudaStream_t) {
+      copy(src, dst);
+    });
   }
 
   void print_timings(std::string_view header, float min_ms, float max_ms, float avg_ms) {
@@ -66,29 +86,35 @@ namespace {
   }
 
   void run_experiments(DeviceBufferView<const uint4> src, DeviceBufferView<uint4> dst) {
-    const auto u8_ms = run_kernel_and_get_ms(
+    const auto u8_ms = run_memcpy_kernel_and_get_ms(
       src.as<const uint8_t>(),
       dst.as<uint8_t>()
     );
     print_timings("u8 copy: ", u8_ms);
     
-    const auto u16_ms = run_kernel_and_get_ms(
+    const auto u16_ms = run_memcpy_kernel_and_get_ms(
       src.as<const uint16_t>(),
       dst.as<uint16_t>()
     );
     print_timings("u16 copy: ", u16_ms);
     
-    const auto u32_ms = run_kernel_and_get_ms(
+    const auto u32_ms = run_memcpy_kernel_and_get_ms(
       src.as<const uint32_t>(),
       dst.as<uint32_t>()
     );
     print_timings("u32 copy: ", u32_ms);
     
-    const auto u32x4_ms = run_kernel_and_get_ms(
+    const auto u32x4_ms = run_memcpy_kernel_and_get_ms(
       src.as_const(),
       dst
     ); 
     print_timings("u32x4 copy: ", u32x4_ms);
+
+    const auto u32x4_builtin_ms = run_builtin_memcpy_and_get_ms(
+      src.as_const(),
+      dst
+    );
+    print_timings("u32x4 built-in copy: ", u32x4_builtin_ms);
   }
 
 }
