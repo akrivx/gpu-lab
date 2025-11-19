@@ -11,7 +11,7 @@ namespace gpu_lab {
     ScopedEvent start;
     ScopedEvent stop;
     start.record(stream);
-    f();
+    f(stream);
     stop.record(stream);
     stop.sync();
     return stop.elapsed_time_from(start);
