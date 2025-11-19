@@ -98,7 +98,8 @@ int main() {
 
   try {
 
-    constexpr int N = 2 << 20;
+    constexpr int N = 10 * (2 << 19);
+    std::cout << "Copying " << (N * sizeof(uint4) / sizeof(uint8_t)) << " u8s with various methods" << std::endl;
 
     DeviceBuffer<uint4> d_src{N};
     DeviceBuffer<uint4> d_dst{N};
