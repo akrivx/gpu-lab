@@ -79,6 +79,15 @@ namespace gpu_lab {
     auto view() const noexcept { return BufferView<const T, Loc>{data(), size()}; }
     auto view() noexcept { return BufferView<T, Loc>{data(), size()}; }
 
+    auto cview() const noexcept { return view().as_const(); }
+    auto cview() noexcept { return view().as_const(); }
+    
+    template<typename U>
+    auto view_as() const noexcept { return view().as<U>(); }
+      
+    template<typename U>
+    auto view_as() noexcept { return view().as<U>(); }
+
   private:
     handle_type ptr_ = {};
     size_t         size_ = {};
