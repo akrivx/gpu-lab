@@ -12,6 +12,7 @@ namespace gpu_lab {
   template<typename T, MemoryLocation Loc>
   class BufferView {
   public:
+    static constexpr MemoryLocation MEMORY_LOCATION = Loc;
     using element_type = T;
     using reference = T&;
     using const_reference = const T&;
@@ -54,14 +55,38 @@ namespace gpu_lab {
       return subspan(count, size_ - count);
     }
 
+    __host__ __device__ BufferView<const value_type, Loc> as_const() const noexcept {
+      return {data_, size_};
+    }
+
+    __host__ __device__ BufferView<const value_type, Loc> as_const() noexcept {
+      return {data_, size_};
+    }
+
+    template<typename U>
+    __host__ __device__ auto as() const noexcept { return rebind_view<U>(*this); }
+
+    template<typename U>
+    __host__ __device__ auto as() noexcept { return rebind_view<U>(*this); }
+      
+  private:
+    template<typename U, typename View>
+      requires ((!std::is_const_v<typename View::element_type> || std::is_const_v<U>) &&
+                  sizeof(typename View::element_type) >= sizeof(U) &&
+                  sizeof(typename View::element_type) % sizeof(U) == 0)
+    static __host__ __device__ auto rebind_view(View v) {
+      const auto nbytes = v.size() * sizeof(typename View::element_type);
+      return BufferView<U, View::MEMORY_LOCATION>{reinterpret_cast<U*>(v.data()), nbytes / sizeof(U)};
+    }
+
   private:
     T*     data_ = {};
     size_t size_ = {};
   };
 
   template<typename SrcT, MemoryLocation SrcLoc, typename DstT, MemoryLocation DstLoc>
-    requires (std::is_same_v<std::remove_cv_t<SrcT>, std::remove_cv_t<DstT>>
-              && !std::is_const_v<DstT>)
+    requires (std::is_same_v<std::remove_cv_t<SrcT>, DstT> &&
+              !std::is_const_v<DstT>)
   void copy(
     BufferView<SrcT, SrcLoc> src,
     BufferView<DstT, DstLoc> dst
@@ -82,9 +107,9 @@ namespace gpu_lab {
   }
 
   template<typename SrcT, MemoryLocation SrcLoc, typename DstT, MemoryLocation DstLoc>
-    requires ((SrcLoc == MemoryLocation::DEVICE || DstLoc == MemoryLocation::DEVICE)
-              && std::is_same_v<std::remove_cv_t<SrcT>, std::remove_cv_t<DstT>>
-              && !std::is_const_v<DstT>)
+    requires ((SrcLoc == MemoryLocation::DEVICE || DstLoc == MemoryLocation::DEVICE) &&
+              std::is_same_v<std::remove_cv_t<SrcT>, DstT> &&
+              !std::is_const_v<DstT>)
   void copy_async(
     BufferView<SrcT, SrcLoc> src,
     BufferView<DstT, DstLoc> dst,
