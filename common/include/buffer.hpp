@@ -48,10 +48,7 @@ namespace gpu_lab {
     using handle_type = typename traits::handle_type;
     using element_type = typename traits::element_type;
 
-    Buffer() = default;
-
-    Buffer(Buffer&&) noexcept = default;
-    Buffer& operator=(Buffer&&) noexcept = default;
+    Buffer() noexcept = default;
 
     Buffer(const Buffer&) = delete;
     Buffer& operator=(const Buffer&) = delete;
@@ -61,10 +58,23 @@ namespace gpu_lab {
       , size_{size}
     {}
 
-    Buffer(handle_type&& ptr, size_t size)
+    Buffer(handle_type&& ptr, size_t size) noexcept
       : ptr_{std::move(ptr)}
       , size_{size}
     {}
+  
+    Buffer(Buffer&& o) noexcept
+      : ptr_{std::exchange(o.ptr_, {})}
+      , size_{std::exchange(o.size_, {})}
+    {}
+      
+    Buffer& operator=(Buffer&& o) noexcept {
+      if (this != &o) {
+        ptr_ = std::exchange(o.ptr_, {});
+        size_ = std::exchange(o.size_, {});
+      }
+      return *this;
+    }
 
     handle_type release() {
       auto ptr = std::exchange(ptr_, {});
