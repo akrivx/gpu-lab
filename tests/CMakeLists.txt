@@ -25,6 +25,7 @@ function(add_gpu_lab_test name)
   target_link_libraries(${name}
     PRIVATE
       gpu_lab_options
+      gpu_lab_common
       GTest::gtest_main
   )
 

@@ -11,6 +11,6 @@ target_include_directories(memcpy_vectorised
 # Inherit warnings, C++20, CUDA flags, cudart, and common helpers
 target_link_libraries(memcpy_vectorised
   PRIVATE
-    # gpu_lab_common
+    gpu_lab_common
     gpu_lab_options
 )

@@ -69,7 +69,7 @@ target_link_libraries(gpu_lab_options INTERFACE
 # -----------------------------
 # Subdirectories
 # -----------------------------
-# add_subdirectory(common)
+add_subdirectory(common)
 add_subdirectory(experiments)
 
 # -----------------------------
