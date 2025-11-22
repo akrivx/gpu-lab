@@ -29,13 +29,13 @@ namespace gpu_lab {
 
     __host__ __device__ const_reference operator[](size_t i) const noexcept
     {
-      assert(i <= size_);
+      assert(i < size_);
       return data_[i];
     }
   
     __host__ __device__ reference operator[](size_t i) noexcept
     {
-      assert(i <= size_);
+      assert(i < size_);
       return data_[i];
     }
 
