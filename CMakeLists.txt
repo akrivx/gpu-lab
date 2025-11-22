@@ -71,3 +71,14 @@ target_link_libraries(gpu_lab_options INTERFACE
 # -----------------------------
 # add_subdirectory(common)
 add_subdirectory(experiments)
+
+# -----------------------------
+# Testing
+# -----------------------------
+option(GPU_LAB_ENABLE_TESTING "Build and run unit tests" ON)
+
+if (GPU_LAB_ENABLE_TESTING)
+  include(CTest)       # defines BUILD_TESTING option etc.
+  enable_testing()
+  add_subdirectory(tests)
+endif()
