@@ -2,19 +2,18 @@
 
 #include <memory>
 #include <type_traits>
+
 #include <cuda_runtime.h>
+
 #include "cuda_check.hpp"
 
 namespace gpu_lab {
-
   namespace detail {
-
     struct DevicePtrDeleter {
       void operator()(void* dev_ptr) const noexcept {
         cudaFree(dev_ptr);
       }
     };
-
   } // namespace detail
 
   template<typename T>
@@ -28,5 +27,4 @@ namespace gpu_lab {
     CUDA_CHECK(cudaMalloc(&dev_ptr, n * sizeof(U)));
     return UniqueDevicePtr<T>{dev_ptr};
   }
-
-}
+} // namespace gpu_lab

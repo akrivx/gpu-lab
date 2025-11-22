@@ -3,16 +3,17 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+
 #include <cuda_runtime.h>
 
 namespace gpu_lab {
-
   class CudaError : public std::runtime_error {
   public:
     CudaError(cudaError_t err, std::string_view msg)
       : std::runtime_error{
           std::string(cudaGetErrorName(err)) + ": " +
-          cudaGetErrorString(err) + " | " + std::string{msg}} {}
+          cudaGetErrorString(err) + " | " + std::string{msg}}
+    {}
   };
 
   namespace detail {
@@ -21,9 +22,8 @@ namespace gpu_lab {
         throw CudaError{err, msg};
       }
     }
-  }
-
-}
+  } // namespace detail
+} // namespace gpu_lab
 
 #define CUDA_CHECK(expr) \
   gpu_lab::detail::cuda_check_impl((expr), std::string_view{__FILE__":" + std::to_string(__LINE__)})

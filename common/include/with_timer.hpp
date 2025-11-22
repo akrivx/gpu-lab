@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 #include <limits>
 #include <tuple>
 
@@ -10,7 +11,6 @@
 #include "scoped_event.hpp"
 
 namespace gpu_lab {
-
   /// @brief Measures the GPU execution time of a callable using CUDA events.
   /// 
   /// This helper records a start and stop CUDA event around the invocation of
@@ -94,5 +94,4 @@ namespace gpu_lab {
 
     return std::make_tuple(min_ms, max_ms, total_ms / num_iter);
   }
-
-}
+} // namespace gpu_lab

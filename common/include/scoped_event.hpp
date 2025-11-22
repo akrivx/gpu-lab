@@ -1,11 +1,12 @@
 #pragma once
 
 #include <memory>
+
 #include <cuda_runtime.h>
+
 #include "cuda_check.hpp"
 
 namespace gpu_lab {
-
   namespace detail {
     struct EventDeleter {
       using pointer = cudaEvent_t;
@@ -21,7 +22,7 @@ namespace gpu_lab {
       CUDA_CHECK(cudaEventCreateWithFlags(&e, flags));
       return UniqueEvent{e};
     }
-  }
+  } // namespace detail
 
   struct ScopedEvent {
     explicit ScopedEvent(unsigned int flags = cudaEventDefault)
@@ -47,5 +48,4 @@ namespace gpu_lab {
 
     detail::UniqueEvent ev_;
   };
-
-}
+} // namespace gpu_lab

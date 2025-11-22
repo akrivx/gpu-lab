@@ -1,7 +1,6 @@
 #include "kernels.cuh"
 
 namespace {
-
   template<typename T>
   __global__ void memcpy_kernel(const T* __restrict__ src, T* __restrict__ dst, size_t count) {
     const size_t stride = blockDim.x * gridDim.x;
@@ -10,11 +9,9 @@ namespace {
       dst[i] = src[i];
     }
   }
-
-}
+} // namespace (anonymous) 
 
 namespace gpu_lab {
-
   void launch_memcpy_kernel(dim3 grid, dim3 block, DeviceBufferView<const uint8_t> src, DeviceBufferView<uint8_t> dst) {
     memcpy_kernel<<<grid, block>>>(src.data(), dst.data(), dst.size());
   }
@@ -30,5 +27,4 @@ namespace gpu_lab {
   void launch_memcpy_kernel(dim3 grid, dim3 block, DeviceBufferView<const uint4> src, DeviceBufferView<uint4> dst) {
     memcpy_kernel<<<grid, block>>>(src.data(), dst.data(), dst.size());
   }
-
-}
+} // namespace gpu_lab

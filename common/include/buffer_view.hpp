@@ -4,10 +4,10 @@
 #include <cassert>
 #include <stdexcept>
 #include <type_traits>
+
 #include "memory_location.hpp"
 
 namespace gpu_lab {
-
   template<typename T, MemoryLocation Loc>
   class BufferView {
   public:
@@ -138,5 +138,4 @@ namespace gpu_lab {
 
   template<typename T>
   using HostPageableBufferView = BufferView<T, MemoryLocation::HOST_PAGEABLE>;
-
-}
+} // namespace gpu_lab

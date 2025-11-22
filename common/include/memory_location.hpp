@@ -3,7 +3,6 @@
 #include <cuda_runtime.h>
 
 namespace gpu_lab {
-
   enum class MemoryLocation {
     HOST_PAGEABLE,
     HOST_PINNED,
@@ -27,5 +26,4 @@ namespace gpu_lab {
       return cudaMemcpyHostToHost;
     }
   }
-
-}
+} // namespace gpu_lab

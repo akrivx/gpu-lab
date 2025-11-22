@@ -1,13 +1,17 @@
 #pragma once
 
+#include <memory>
+#include <utility>
+#include <type_traits>
+
+#include <cuda_runtime.h>
+
 #include "device_ptr.hpp"
 #include "pinned_ptr.hpp"
 #include "buffer_view.hpp"
 
 namespace gpu_lab {
-
   namespace detail {
-
     template<typename T, MemoryLocation Loc>
     struct BufferTraits {
       using element_type = T;
@@ -34,7 +38,6 @@ namespace gpu_lab {
         }
       }
     };
-
   } // namespace detail
 
   template<typename T, MemoryLocation Loc>
@@ -146,5 +149,4 @@ namespace gpu_lab {
   auto to_host_pinned_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
     return clone_async<MemoryLocation::HOST_PINNED>(src, stream);
   }
-
-}
+} // namespace gpu_lab

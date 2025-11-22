@@ -2,19 +2,18 @@
 
 #include <memory>
 #include <type_traits>
+
 #include <cuda_runtime.h>
+
 #include "cuda_check.hpp"
 
 namespace gpu_lab {
-
   namespace detail {
-
     struct PinnedPtrDeleter {
       void operator()(void* host_ptr) const noexcept {
         cudaFreeHost(host_ptr);
       }
     };
-
   } // namespace detail
 
   template<typename T>
@@ -28,5 +27,4 @@ namespace gpu_lab {
     CUDA_CHECK(cudaMallocHost(&pinned_ptr, n * sizeof(U)));
     return UniquePinnedPtr<T>{pinned_ptr};
   }
-
-}
+} // namespace gpu_lab
