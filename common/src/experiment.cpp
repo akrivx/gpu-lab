@@ -1,9 +1,10 @@
 #include "experiment.hpp"
 
-#include <cstdio>
-#include <sstream>
+#include <ostream>
+#include <format>
 #include <vector>
 #include <string>
+#include <string_view>
 
 namespace {
   struct Row {
@@ -32,52 +33,45 @@ namespace {
       gbps_from_ms(e.avg_ms),
     };
   }
-
-  std::string format_bandwidth_table(const std::vector<gpu_lab::ExperimentResult>& results) {
-    std::ostringstream oss;
-
-    const char* sep =
-      "+--------------+----------+----------+----------+----------+----------+----------+----------+\n";
-
-    oss << sep;
-    oss << "| Experiment   |   MiB    |  Min ms  |  Max ms  |  Avg ms  | Best GB/s| Avg GB/s | Worst GB/s|\n";
-    oss << sep;
-
-    for (const auto& e : results) {
-      const float mib = e.bytes_moved / (1024.0f * 1024.0f);
-      auto gbps_from_ms = [&](float ms) {
-        const float sec = ms / 1000.0f;
-        return (e.bytes_moved / sec) / 1.0e9f; // GB/s
-      };
-
-      const float best_gbps  = gbps_from_ms(e.min_ms); // fastest → highest BW
-      const float avg_gbps   = gbps_from_ms(e.avg_ms);
-      const float worst_gbps = gbps_from_ms(e.max_ms); // slowest → lowest BW
-
-      char line[256];
-      std::snprintf(
-        line, sizeof(line),
-        "| %-12s | %8.2f | %8.3f | %8.3f | %8.3f | %8.2f | %8.2f | %8.2f |\n",
-        e.name.c_str(),
-        mib,
-        e.min_ms,
-        e.max_ms,
-        e.avg_ms,
-        best_gbps,
-        avg_gbps,
-        worst_gbps
-      );
-      oss << line;
-    }
-
-    oss << sep;
-    return std::move(oss).str();
-  }
 } // namespace (anonymous)
 
 namespace gpu_lab {
   void print_bandwidth_table(const std::vector<ExperimentResult>& results, std::ostream& out) {
-    out << ::format_bandwidth_table(results);
+    {
+      std::string_view sep =
+        "+--------------+----------+----------+----------+----------+------------+------------+------------+\n";
+
+      out << sep;
+      out << "| Experiment   |   MiB    |  Min ms  |  Max ms  |  Avg ms  | Best GB/s  | Worst GB/s |  Avg GB/s  |\n";
+      out << sep;
+    
+      for (const auto& e : results) {
+        const float mib = static_cast<float>(e.bytes_moved) / (1024.0f * 1024.0f);
+    
+        auto gbps_from_ms = [&](float ms) {
+          const float sec = ms / 1000.0f;
+          return (static_cast<float>(e.bytes_moved) / sec) / 1.0e9f; // GB/s
+        };
+    
+        const float best_gbps  = gbps_from_ms(e.min_ms); // fastest -> highest BW
+        const float worst_gbps = gbps_from_ms(e.max_ms); // slowest -> lowest BW
+        const float avg_gbps   = gbps_from_ms(e.avg_ms);
+    
+        out << std::format(
+          "| {:<12} | {:8.2f} | {:8.3f} | {:8.3f} | {:8.3f} | {:10.2f} | {:10.2f} | {:10.2f} |\n",
+          e.name,
+          mib,
+          e.min_ms,
+          e.max_ms,
+          e.avg_ms,
+          best_gbps,
+          worst_gbps,
+          avg_gbps
+        );
+      }
+    
+      out << sep;
+    }
   }
 
   std::vector<ExperimentResult> run_bandwidth_experiments(
