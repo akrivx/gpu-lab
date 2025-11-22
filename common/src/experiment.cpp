@@ -1,9 +1,9 @@
 #include "experiment.hpp"
 
-#include <ostream>
+#include <cstdio>
+#include <sstream>
 #include <vector>
 #include <string>
-#include <iomanip>
 
 namespace {
   struct Row {
@@ -16,7 +16,7 @@ namespace {
     float avg_gbps;    // from avg time
   };
 
-  inline Row make_row(const gpu_lab::ExperimentResult& e) {
+  Row make_row(const gpu_lab::ExperimentResult& e) {
     auto gbps_from_ms = [&](float ms) {
       const float sec = ms / 1000.0f;
       return (e.bytes_moved / sec) / 1e9f; // GB/s
@@ -32,54 +32,52 @@ namespace {
       gbps_from_ms(e.avg_ms),
     };
   }
+
+  std::string format_bandwidth_table(const std::vector<gpu_lab::ExperimentResult>& results) {
+    std::ostringstream oss;
+
+    const char* sep =
+      "+--------------+----------+----------+----------+----------+----------+----------+----------+\n";
+
+    oss << sep;
+    oss << "| Experiment   |   MiB    |  Min ms  |  Max ms  |  Avg ms  | Best GB/s| Avg GB/s | Worst GB/s|\n";
+    oss << sep;
+
+    for (const auto& e : results) {
+      const float mib = e.bytes_moved / (1024.0f * 1024.0f);
+      auto gbps_from_ms = [&](float ms) {
+        const float sec = ms / 1000.0f;
+        return (e.bytes_moved / sec) / 1.0e9f; // GB/s
+      };
+
+      const float best_gbps  = gbps_from_ms(e.min_ms); // fastest → highest BW
+      const float avg_gbps   = gbps_from_ms(e.avg_ms);
+      const float worst_gbps = gbps_from_ms(e.max_ms); // slowest → lowest BW
+
+      char line[256];
+      std::snprintf(
+        line, sizeof(line),
+        "| %-12s | %8.2f | %8.3f | %8.3f | %8.3f | %8.2f | %8.2f | %8.2f |\n",
+        e.name.c_str(),
+        mib,
+        e.min_ms,
+        e.max_ms,
+        e.avg_ms,
+        best_gbps,
+        avg_gbps,
+        worst_gbps
+      );
+      oss << line;
+    }
+
+    oss << sep;
+    return std::move(oss).str();
+  }
 } // namespace (anonymous)
 
 namespace gpu_lab {
   void print_bandwidth_table(const std::vector<ExperimentResult>& results, std::ostream& out) {
-    using std::left;
-    using std::right;
-    using std::setw;
-    using std::fixed;
-    using std::setprecision;
-
-    std::vector<::Row> rows;
-    rows.reserve(results.size());
-    for (const auto& e : results) {
-      rows.push_back(::make_row(e));
-    }
-
-    const char* sep =
-      "+----------------+------------+------------+------------+------------+------------+------------+\n";
-
-    out << sep;
-    out << "| " << left  << setw(14) << "Experiment"
-        << " | " << right << setw(10) << "Min ms"
-        << " | " << right << setw(10) << "Max ms"
-        << " | " << right << setw(10) << "Avg ms"
-        << " | " << right << setw(10) << "Best GB/s"
-        << " | " << right << setw(10) << "Worst GB/s"
-        << " | " << right << setw(10) << "Avg GB/s"
-        << " |\n";
-    out << sep;
-
-    out << fixed << setprecision(3);
-    for (const auto& r : rows) {
-      out << "| " << left  << setw(14) << r.name
-          << " | " << right << setw(10) << r.min_ms
-          << " | " << right << setw(10) << r.max_ms
-          << " | " << right << setw(10) << r.avg_ms;
-
-      out << setprecision(1);
-
-      out << " | " << right << setw(10) << r.best_gbps
-          << " | " << right << setw(10) << r.avg_gbps
-          << " | " << right << setw(10) << r.worst_gbps
-          << " |\n";
-
-      out << setprecision(3); // restore for next time values
-    }
-
-    out << sep;
+    out << ::format_bandwidth_table(results);
   }
 
   std::vector<ExperimentResult> run_bandwidth_experiments(
