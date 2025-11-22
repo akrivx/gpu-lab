@@ -54,10 +54,6 @@ namespace gpu_lab {
       return subspan(count, size_ - count);
     }
 
-    __host__ __device__ BufferView<const value_type, Loc> as_const() const noexcept {
-      return {data_, size_};
-    }
-
     __host__ __device__ BufferView<const value_type, Loc> as_const() noexcept {
       return {data_, size_};
     }
