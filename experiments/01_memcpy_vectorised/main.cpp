@@ -2,9 +2,10 @@
 #include <random>
 #include <stdexcept>
 #include <string_view>
-#include <cuda_runtime.h>
 #include <vector>
 #include <functional>
+
+#include <cuda_runtime.h>
 
 #include "buffer.hpp"
 #include "buffer_view.hpp"
@@ -14,37 +15,7 @@
 
 using namespace gpu_lab;
 
-
 namespace {
-
-  template<typename F>
-  auto with_timer_and_stats(
-    F&& f,
-    cudaStream_t stream = cudaStreamDefault,
-    int num_iter = 100,
-    int num_warmup_iter = 100
-  ) {
-    // Warmup
-    if (num_warmup_iter > 0) {
-      for (int i = 0; i < num_warmup_iter; ++i) {
-        f(stream);
-      }
-      CUDA_CHECK(cudaDeviceSynchronize());
-    }
-
-    float min_ms = FLT_MAX;
-    float max_ms = 0.0f;
-    float total_ms = 0.0f;
-
-    for (int i = 0; i < num_iter; ++i) {
-      const auto ms = with_timer(f, stream);
-      min_ms = std::min(min_ms, ms);
-      max_ms = std::max(max_ms, ms);
-      total_ms += ms;
-    }
-
-    return std::make_tuple(min_ms, max_ms, total_ms / num_iter);
-  }
 
   template<typename T>
   auto run_memcpy_kernel_and_get_ms(
@@ -59,7 +30,7 @@ namespace {
     dim3 grid{static_cast<uint32_t>(src.size() / threads_per_block)};
     dim3 block{threads_per_block};
 
-    return with_timer_and_stats([&](cudaStream_t) {
+    return run_benchmark([&](cudaStream_t) {
       launch_memcpy_kernel(grid, block, src, dst);
     });
   }
@@ -69,7 +40,7 @@ namespace {
     DeviceBufferView<const T> src,
     DeviceBufferView<T> dst
   ) {
-    return with_timer_and_stats([&](cudaStream_t) {
+    return run_benchmark([&](cudaStream_t) {
       copy(src, dst);
     });
   }
