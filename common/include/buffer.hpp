@@ -131,7 +131,7 @@ namespace gpu_lab {
   auto clone_async(BufferView<T, SrcLoc> src, cudaStream_t stream = cudaStreamDefault) {
     using U = typename BufferView<T, SrcLoc>::value_type;
     Buffer<U, Loc> out{src.size()};
-    copy_async(src, out.view());
+    copy_async(src, out.view(), stream);
     return out;
   }
 
