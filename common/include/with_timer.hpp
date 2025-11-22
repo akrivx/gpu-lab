@@ -1,9 +1,11 @@
 #pragma once
 
-#include <cuda_runtime.h>
 #include <algorithm>
+#include <stdexcept>
 #include <limits>
 #include <tuple>
+
+#include <cuda_runtime.h>
 
 #include "scoped_event.hpp"
 
@@ -34,7 +36,7 @@ namespace gpu_lab {
     ScopedEvent start;
     ScopedEvent stop;
     start.record(stream);
-    f(stream);
+    std::forward<F>(f)(stream);
     stop.record(stream);
     stop.sync();
     return stop.elapsed_time_from(start);
@@ -68,6 +70,10 @@ namespace gpu_lab {
     int num_iter = 50,
     int num_warmup_iter = 10
   ) {
+    if (num_iter <= 0) {
+      throw std::invalid_argument{"run_benchmark: num_iter must be > 0"};
+    }
+
     // Warmup
     if (num_warmup_iter > 0) {
       for (int i = 0; i < num_warmup_iter; ++i) {
