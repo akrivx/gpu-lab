@@ -2,7 +2,6 @@
 
 #include <cuda_runtime.h>
 
-
 namespace gpu_lab {
 
   enum class MemoryLocation {

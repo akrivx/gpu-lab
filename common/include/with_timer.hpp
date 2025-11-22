@@ -9,7 +9,6 @@
 
 #include "scoped_event.hpp"
 
-
 namespace gpu_lab {
 
   /// @brief Measures the GPU execution time of a callable using CUDA events.

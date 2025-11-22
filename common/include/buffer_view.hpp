@@ -6,7 +6,6 @@
 #include <type_traits>
 #include "memory_location.hpp"
 
-
 namespace gpu_lab {
 
   template<typename T, MemoryLocation Loc>

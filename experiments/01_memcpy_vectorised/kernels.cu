@@ -1,6 +1,5 @@
 #include "kernels.cuh"
 
-
 namespace {
 
   template<typename T>
@@ -13,7 +12,6 @@ namespace {
   }
 
 }
-
 
 namespace gpu_lab {
 

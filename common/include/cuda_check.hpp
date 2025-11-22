@@ -5,7 +5,6 @@
 #include <string_view>
 #include <cuda_runtime.h>
 
-
 namespace gpu_lab {
 
   class CudaError : public std::runtime_error {

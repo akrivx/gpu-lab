@@ -4,7 +4,6 @@
 #include "pinned_ptr.hpp"
 #include "buffer_view.hpp"
 
-
 namespace gpu_lab {
 
   namespace detail {
