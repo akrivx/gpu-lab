@@ -2,65 +2,32 @@
 
 #include <memory>
 #include <utility>
-#include <type_traits>
 
 #include <cuda_runtime.h>
 
-#include "device_ptr.hpp"
-#include "pinned_ptr.hpp"
+#include "unique_array.hpp"
 #include "buffer_view.hpp"
 
 namespace gpu_lab {
-  namespace detail {
-    template<typename T, MemoryLocation Loc>
-    struct BufferTraits {
-      using element_type = T;
-      using handle_type = std::conditional_t<
-        Loc == MemoryLocation::HOST_PAGEABLE,
-        std::unique_ptr<T[]>,
-        std::conditional_t<
-          Loc == MemoryLocation::HOST_PINNED,
-          UniquePinnedPtr<T[]>,
-          UniqueDevicePtr<T[]>
-        >
-      >;
-
-      static auto allocate(size_t size) {
-        if constexpr (Loc == MemoryLocation::HOST_PAGEABLE) {
-          return std::make_unique_for_overwrite<T[]>(size);
-        }
-        else if constexpr (Loc == MemoryLocation::HOST_PINNED) {
-          return make_unique_pinned_ptr<T[]>(size);
-        }
-        else { // MemoryLocation::DEVICE
-          static_assert(Loc == MemoryLocation::DEVICE);
-          return make_unique_device_ptr<T[]>(size);
-        }
-      }
-    };
-  } // namespace detail
-
   template<typename T, MemoryLocation Loc>
   class Buffer {
-    using traits = detail::BufferTraits<T, Loc>;
-    
   public:
-    using handle_type = typename traits::handle_type;
-    using element_type = typename traits::element_type;
+    using handle_type = UniqueArray<T, Loc>;
+    using element_type = T;
 
     Buffer() noexcept = default;
 
     Buffer(const Buffer&) = delete;
     Buffer& operator=(const Buffer&) = delete;
 
-    explicit Buffer(size_t size)
-      : ptr_{traits::allocate(size)}
-      , size_{size}
+    explicit Buffer(size_t count)
+      : ptr_{make_unique_array<T, Loc>(count)}
+      , size_{count}
     {}
 
-    Buffer(handle_type&& ptr, size_t size) noexcept
+    Buffer(handle_type&& ptr, size_t count) noexcept
       : ptr_{std::move(ptr)}
-      , size_{size}
+      , size_{count}
     {}
   
     Buffer(Buffer&& o) noexcept

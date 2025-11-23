@@ -39,8 +39,8 @@ endfunction()
 # Actual tests
 # ------------------------------------
 
-add_gpu_lab_test(test_unique_ptrs
-  test_unique_ptrs.cpp
+add_gpu_lab_test(test_unique_array
+  test_unique_array.cpp
 )
 
 add_gpu_lab_test(test_buffer
