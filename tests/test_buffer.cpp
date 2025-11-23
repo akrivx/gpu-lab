@@ -125,6 +125,21 @@ TEST(BufferView, RebindViewToSmallerElementType)
   }
 }
 
+TEST(BufferView, Copy)
+{
+  const int src_data[5] = {10, 20, 30, 40, 50};
+  int dst_data[5] = {-1, -1, -1, -1, -1};
+
+  HostPageableBufferView src{src_data, 5};
+  HostPageableBufferView dst{dst_data, 5};
+
+  copy(src, dst);
+
+  for (size_t i = 0; i < src.size(); ++i) {
+    EXPECT_EQ(dst[i], src[i]);
+  }
+}
+
 // ---------- Buffer (host-pageable) basic tests ----------
 
 TEST(Buffer, DefaultConstructedIsEmpty)
@@ -263,8 +278,8 @@ TEST(BufferCopy, SizeMismatchThrows)
   HostPageableBuffer<int> small{M};
   HostPageableBuffer<int> big{N};
 
-  EXPECT_THROW(copy(small.cview(), big.view()), std::runtime_error);
-  EXPECT_THROW(copy(big.cview(), small.view()), std::runtime_error);
+  EXPECT_THROW(copy(small, big), std::runtime_error);
+  EXPECT_THROW(copy(big, small), std::runtime_error);
 }
 
 TEST(BufferCopy, HostToHostCopy)
@@ -278,7 +293,7 @@ TEST(BufferCopy, HostToHostCopy)
     dst.data()[i] = -1;
   }
 
-  copy(src.view(), dst.view());
+  copy(src, dst);
 
   for (size_t i = 0; i < N; ++i) {
     EXPECT_EQ(dst.data()[i], src.data()[i]);
@@ -342,8 +357,7 @@ TEST(BufferCopy, DeviceToHostCopy)
   }
 
   // Copy to device first
-  DeviceBuffer<int> d_src{N};
-  copy(h_src.view(), d_src.view());
+  auto d_src = to_device_buffer(h_src);
 
   // Prepare host destination
   HostPageableBuffer<int> h_dst{N};
@@ -352,7 +366,7 @@ TEST(BufferCopy, DeviceToHostCopy)
   }
 
   // Now the thing we actually care about: device -> host
-  copy(d_src.view(), h_dst.view());
+  copy(d_src, h_dst);
 
   for (size_t i = 0; i < N; ++i) {
     EXPECT_EQ(h_dst.data()[i], h_src.data()[i]);
@@ -369,8 +383,7 @@ TEST(BufferCopy, DeviceToDeviceCopy)
   }
 
   // Fill d_src from host
-  DeviceBuffer<int> d_src{N};
-  copy(h_src.view(), d_src.view());
+  auto d_src = to_device_buffer(h_src);
 
   // d_dst initially different
   DeviceBuffer<int> d_dst{N};
@@ -379,15 +392,14 @@ TEST(BufferCopy, DeviceToDeviceCopy)
     for (size_t i = 0; i < N; ++i) {
       h_tmp.data()[i] = -1;
     }
-    copy(h_tmp.view(), d_dst.view());
+    copy(h_tmp, d_dst);
   }
 
   // Device -> Device
-  copy(d_src.view(), d_dst.view());
+  copy(d_src, d_dst);
 
   // Copy d_dst back and compare
-  HostPageableBuffer<int> h_dst{N};
-  copy(d_dst.view(), h_dst.view());
+  auto h_dst = to_host_pageable_buffer(d_dst);
 
   for (size_t i = 0; i < N; ++i) {
     EXPECT_EQ(h_dst.data()[i], h_src.data()[i]);
@@ -403,7 +415,6 @@ TEST(BufferCopyAsync, DeviceToHost)
     h_src.data()[i] = static_cast<int>(i + 1000);
   }
 
-  DeviceBuffer<int> d_buf{N};
   HostPageableBuffer<int> h_dst{N};
   for (size_t i = 0; i < N; ++i) {
     h_dst.data()[i] = -1;
@@ -413,9 +424,9 @@ TEST(BufferCopyAsync, DeviceToHost)
   ASSERT_EQ(cudaStreamCreate(&stream), cudaSuccess);
 
   // Host -> Device
-  copy_async(h_src.view(), d_buf.view(), stream);
+  auto d_buf = to_device_buffer_async(h_src, stream);
   // Device -> Host
-  copy_async(d_buf.view(), h_dst.view(), stream);
+  copy_async(d_buf, h_dst, stream);
 
   ASSERT_EQ(cudaStreamSynchronize(stream), cudaSuccess);
   ASSERT_EQ(cudaStreamDestroy(stream), cudaSuccess);
@@ -434,24 +445,20 @@ TEST(BufferCopyAsync, DeviceToDevice)
     h_src.data()[i] = static_cast<int>(42 + i);
   }
 
-  DeviceBuffer<int> d_src{N};
-  DeviceBuffer<int> d_dst{N};
-
   cudaStream_t stream;
   ASSERT_EQ(cudaStreamCreate(&stream), cudaSuccess);
 
   // Host -> d_src
-  copy_async(h_src.view(), d_src.view(), stream);
+  auto d_src = to_device_buffer_async(h_src, stream);
 
   // d_src -> d_dst
-  copy_async(d_src.view(), d_dst.view(), stream);
+  auto d_dst = to_device_buffer_async(d_src, stream);
 
   ASSERT_EQ(cudaStreamSynchronize(stream), cudaSuccess);
   ASSERT_EQ(cudaStreamDestroy(stream), cudaSuccess);
 
   // Bring d_dst back to host and compare
-  HostPageableBuffer<int> h_dst{N};
-  copy(d_dst.view(), h_dst.view());
+  auto h_dst = to_host_pageable_buffer(d_dst);
 
   for (size_t i = 0; i < N; ++i) {
     EXPECT_EQ(h_dst.data()[i], h_src.data()[i]);
