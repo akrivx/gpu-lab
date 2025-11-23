@@ -84,8 +84,7 @@ namespace gpu_lab {
               !std::is_const_v<DstT>)
   void copy(
     BufferView<SrcT, SrcLoc> src,
-    BufferView<DstT, DstLoc> dst
-  )
+    BufferView<DstT, DstLoc> dst)
   {
     if (src.size() != dst.size()) {
       throw std::runtime_error{"buffer copy size mismatch"};
@@ -108,8 +107,7 @@ namespace gpu_lab {
   void copy_async(
     BufferView<SrcT, SrcLoc> src,
     BufferView<DstT, DstLoc> dst,
-    cudaStream_t             stream = cudaStreamDefault
-  )
+    cudaStream_t             stream = cudaStreamDefault)
   {
     if (src.size() != dst.size()) {
       throw std::runtime_error{"buffer copy async size mismatch"};
