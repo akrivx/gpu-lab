@@ -101,8 +101,8 @@ namespace gpu_lab {
     auto view_as() noexcept { return view().as<U>(); }
 
   private:
-    handle_type ptr_ = {};
-    size_t         size_ = {};
+    handle_type ptr_  = {};
+    size_t      size_ = {};
   };
 
   template<typename T>
