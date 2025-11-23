@@ -73,13 +73,13 @@ namespace gpu_lab {
   };
 
   template<typename T>
-  using DeviceBuffer = Buffer<T, MemoryLocation::DEVICE>;
+  using HostPageableBuffer = Buffer<T, MemoryLocation::HOST_PAGEABLE>;
 
   template<typename T>
   using HostPinnedBuffer = Buffer<T, MemoryLocation::HOST_PINNED>;
 
   template<typename T>
-  using HostPageableBuffer = Buffer<T, MemoryLocation::HOST_PAGEABLE>;
+  using DeviceBuffer = Buffer<T, MemoryLocation::DEVICE>;
 
   template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
   auto clone(BufferView<T, SrcLoc> src) {
