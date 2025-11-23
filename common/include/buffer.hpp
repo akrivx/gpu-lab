@@ -10,7 +10,7 @@
 
 namespace gpu_lab {
   template<typename T, MemoryLocation Loc>
-  class Buffer {
+  class [[nodiscard]] Buffer {
   public:
     using handle_type = UniqueArray<T, Loc>;
     using element_type = T;
