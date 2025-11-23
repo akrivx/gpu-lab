@@ -81,6 +81,23 @@ namespace gpu_lab {
   template<typename T>
   using DeviceBuffer = Buffer<T, MemoryLocation::DEVICE>;
 
+  template<typename T, MemoryLocation SrcLoc, MemoryLocation DstLoc>
+  void copy(
+    const Buffer<T, SrcLoc>& src,
+    Buffer<T, DstLoc>&       dst)
+  {
+    copy(src.view(), dst.view());
+  }
+
+  template<typename T, MemoryLocation SrcLoc, MemoryLocation DstLoc>
+  void copy_async(
+    const Buffer<T, SrcLoc>& src,
+    Buffer<T, DstLoc>&       dst,
+    cudaStream_t             stream = cudaStreamDefault)
+  {
+    copy_async(src.view(), dst.view(), stream);
+  }
+
   template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
   auto clone(BufferView<T, SrcLoc> src) {
     using U = typename BufferView<T, SrcLoc>::value_type;
