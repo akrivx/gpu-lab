@@ -86,4 +86,4 @@ namespace gpu_lab {
     }
     return results;
   }
-}
+} // namespace gpu_lab
