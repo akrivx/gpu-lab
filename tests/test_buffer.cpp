@@ -134,9 +134,8 @@ TEST(Buffer, DefaultConstructedIsEmpty)
   EXPECT_EQ(buf.size(), 0u);
   EXPECT_TRUE(buf.empty());
 
-  auto v = buf.view();
-  EXPECT_EQ(v.data(), nullptr);
-  EXPECT_EQ(v.size(), 0u);
+  EXPECT_EQ(buf.data(), nullptr);
+  EXPECT_EQ(buf.size(), 0u);
 }
 
 TEST(Buffer, SizedConstructAllocates)
@@ -148,9 +147,8 @@ TEST(Buffer, SizedConstructAllocates)
   EXPECT_EQ(buf.size(), N);
   EXPECT_FALSE(buf.empty());
 
-  auto v = buf.view();
-  EXPECT_EQ(v.data(), buf.data());
-  EXPECT_EQ(v.size(), buf.size());
+  EXPECT_EQ(buf.data(), buf.data());
+  EXPECT_EQ(buf.size(), buf.size());
 }
 
 TEST(Buffer, MoveConstructorTransfersOwnership)
@@ -297,10 +295,10 @@ TEST(BufferCopy, HostToDeviceAndBack)
   }
 
   // Host -> Device
-  auto d_buf = to_device_buffer(h_src.view());
+  auto d_buf = to_device_buffer(h_src);
 
   // Device -> Host
-  auto h_dst = to_host_pageable_buffer(d_buf.view());
+  auto h_dst = to_host_pageable_buffer(d_buf);
 
   ASSERT_EQ(h_dst.size(), N);
   for (size_t i = 0; i < N; ++i) {
@@ -320,8 +318,8 @@ TEST(BufferCopyAsync, HostToDeviceAndBackDefaultStream)
   cudaStream_t stream;
   ASSERT_EQ(cudaStreamCreate(&stream), cudaSuccess);
 
-  auto d_buf = to_device_buffer_async(h_src.view(), stream);
-  auto h_dst = to_host_pinned_buffer_async(d_buf.view(), stream);
+  auto d_buf = to_device_buffer_async(h_src, stream);
+  auto h_dst = to_host_pinned_buffer_async(d_buf, stream);
 
   // ensure async copies are finished
   ASSERT_EQ(cudaStreamSynchronize(stream), cudaSuccess);

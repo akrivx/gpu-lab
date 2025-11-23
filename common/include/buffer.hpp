@@ -89,9 +89,9 @@ namespace gpu_lab {
     return out;
   }
 
-  template<typename T, MemoryLocation Loc>
-  auto to_device_buffer(BufferView<T, Loc> src) {
-    return clone<MemoryLocation::DEVICE>(src);
+  template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
+  auto clone(const Buffer<T, SrcLoc>& src) {
+    return clone(src.view());
   }
 
   template<typename T, MemoryLocation Loc>
@@ -100,8 +100,28 @@ namespace gpu_lab {
   }
 
   template<typename T, MemoryLocation Loc>
+  auto to_host_pageable_buffer(const Buffer<T, Loc>& src) {
+    return to_host_pageable_buffer(src.view());
+  }
+
+  template<typename T, MemoryLocation Loc>
   auto to_host_pinned_buffer(BufferView<T, Loc> src) {
     return clone<MemoryLocation::HOST_PINNED>(src);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_host_pinned_buffer(const Buffer<T, Loc>& src) {
+    return to_host_pinned_buffer(src.view());
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_device_buffer(BufferView<T, Loc> src) {
+    return clone<MemoryLocation::DEVICE>(src);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_device_buffer(const Buffer<T, Loc>& src) {
+    return to_device_buffer(src.view());
   }
 
   template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
@@ -112,9 +132,9 @@ namespace gpu_lab {
     return out;
   }
 
-  template<typename T, MemoryLocation Loc>
-  auto to_device_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
-    return clone_async<MemoryLocation::DEVICE>(src, stream);
+  template<MemoryLocation Loc, typename T, MemoryLocation SrcLoc>
+  auto clone_async(const Buffer<T, SrcLoc>& src, cudaStream_t stream = cudaStreamDefault) {
+    return clone_async(src.view(), stream);
   }
 
   template<typename T, MemoryLocation Loc>
@@ -123,7 +143,27 @@ namespace gpu_lab {
   }
 
   template<typename T, MemoryLocation Loc>
+  auto to_host_pageable_buffer_async(const Buffer<T, Loc>& src, cudaStream_t stream = cudaStreamDefault) {
+    return to_host_pageable_buffer_async(src.view(), stream);
+  }
+
+  template<typename T, MemoryLocation Loc>
   auto to_host_pinned_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
     return clone_async<MemoryLocation::HOST_PINNED>(src, stream);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_host_pinned_buffer_async(const Buffer<T, Loc>& src, cudaStream_t stream = cudaStreamDefault) {
+    return to_host_pinned_buffer_async(src.view(), stream);
+  }
+  
+  template<typename T, MemoryLocation Loc>
+  auto to_device_buffer_async(BufferView<T, Loc> src, cudaStream_t stream = cudaStreamDefault) {
+    return clone_async<MemoryLocation::DEVICE>(src, stream);
+  }
+
+  template<typename T, MemoryLocation Loc>
+  auto to_device_buffer_async(const Buffer<T, Loc>& src, cudaStream_t stream = cudaStreamDefault) {
+    return to_device_buffer_async(src.view(), stream);
   }
 } // namespace gpu_lab
