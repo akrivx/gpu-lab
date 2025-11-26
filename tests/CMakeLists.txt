@@ -46,3 +46,7 @@ add_gpu_lab_test(test_unique_array
 add_gpu_lab_test(test_buffer
   test_buffer.cpp
 )
+
+add_gpu_lab_test(test_image_view
+  test_image_view.cpp
+)
