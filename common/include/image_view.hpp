@@ -84,4 +84,19 @@ namespace gpu_lab {
   __host__ __device__ auto subview(ImageView<T, Loc> v, ImageExtentRange r, ImageExtentRange c) {
     return detail::subview(v, r, c);
   }
+
+  template<typename T, MemoryLocation Loc>
+  __host__ __device__ auto as_const(ImageView<T, Loc> v) {
+    using value_type = typename ImageView<T, Loc>::value_type;
+    return ImageView<const value_type, Loc>{v.data_handle(), v.mapping()};
+  }
+
+  template<typename T>
+  using HostImageView = ImageView<T, MemoryLocation::Host>;
+
+  template<typename T>
+  using HostPinnedImageView = ImageView<T, MemoryLocation::HostPinned>;
+
+  template<typename T>
+  using DeviceImageView = ImageView<T, MemoryLocation::Device>;
 } // namespace gpu_lab
