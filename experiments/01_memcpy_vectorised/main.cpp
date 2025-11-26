@@ -61,18 +61,18 @@ int main() {
       for (size_t i = 0; i < h_view.size(); ++i) {
         h_view[i] = dist(rng);
       }
-      copy(h_view, d_src.view_as<uint32_t>());
+      copy(h_view, view_as<uint32_t>(d_src));
     }
 
     auto src = d_src.cview();
     auto dst = d_dst.view();
 
     run_bandwidth_experiments({
-        {"u8",      [&]() { return run_memcpy_kernel_and_get_ms(src.as<const uint8_t>(), dst.as<uint8_t>()); }},
-        {"u16",     [&]() { return run_memcpy_kernel_and_get_ms(src.as<const uint16_t>(), dst.as<uint16_t>()); }},
-        {"u32",     [&]() { return run_memcpy_kernel_and_get_ms(src.as<const uint32_t>(), dst.as<uint32_t>()); }},
-        {"uint4",   [&]() { return run_memcpy_kernel_and_get_ms(src.as_const(), dst); }},
-        {"builtin", [&]() { return run_builtin_memcpy_and_get_ms(src.as_const(), dst); }},
+        {"u8",      [&]() { return run_memcpy_kernel_and_get_ms(view_as<const uint8_t>(d_src), view_as<uint8_t>(d_dst)); }},
+        {"u16",     [&]() { return run_memcpy_kernel_and_get_ms(view_as<const uint16_t>(d_src), view_as<uint16_t>(d_dst)); }},
+        {"u32",     [&]() { return run_memcpy_kernel_and_get_ms(view_as<const uint32_t>(d_src), view_as<uint32_t>(d_dst)); }},
+        {"uint4",   [&]() { return run_memcpy_kernel_and_get_ms(d_src.cview(), d_dst.view()); }},
+        {"builtin", [&]() { return run_builtin_memcpy_and_get_ms(d_src.cview(), d_dst.view()); }},
       },
       N * sizeof(uint4),
       std::cout);

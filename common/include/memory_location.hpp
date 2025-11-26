@@ -4,22 +4,22 @@
 
 namespace gpu_lab {
   enum class MemoryLocation {
-    HOST_PAGEABLE,
-    HOST_PINNED,
-    DEVICE
+    Host,
+    HostPinned,
+    Device
   };
 
   template<MemoryLocation SrcLoc, MemoryLocation DstLoc>
   constexpr cudaMemcpyKind get_memcpy_kind() {
-    if constexpr (SrcLoc == MemoryLocation::DEVICE) {
-      if constexpr (DstLoc == MemoryLocation::DEVICE) {
+    if constexpr (SrcLoc == MemoryLocation::Device) {
+      if constexpr (DstLoc == MemoryLocation::Device) {
         return cudaMemcpyDeviceToDevice;
       }
       else {
         return cudaMemcpyDeviceToHost;
       }
     }
-    else if constexpr (DstLoc == MemoryLocation::DEVICE) {
+    else if constexpr (DstLoc == MemoryLocation::Device) {
       return cudaMemcpyHostToDevice;
     }
     else {

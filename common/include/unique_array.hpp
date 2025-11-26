@@ -26,36 +26,36 @@ namespace gpu_lab {
   template<typename T, MemoryLocation Loc>
     requires (!std::is_array_v<T>)
   using UniqueArray = std::conditional_t<
-    Loc == MemoryLocation::HOST_PAGEABLE,
+    Loc == MemoryLocation::Host,
     std::unique_ptr<T[]>,
     std::conditional_t<
-      Loc == MemoryLocation::HOST_PINNED,
+      Loc == MemoryLocation::HostPinned,
       std::unique_ptr<T[], detail::HostPinnedArrayDeleter>,
       std::unique_ptr<T[], detail::DeviceArrayDeleter>
     >
   >;
 
   template<typename T>
-  using UniqueHostPageableArray = UniqueArray<T, MemoryLocation::HOST_PAGEABLE>;
+  using UniqueHostPageableArray = UniqueArray<T, MemoryLocation::Host>;
 
   template<typename T>
-  using UniqueHostPinnedArray = UniqueArray<T, MemoryLocation::HOST_PINNED>;
+  using UniqueHostPinnedArray = UniqueArray<T, MemoryLocation::HostPinned>;
 
   template<typename T>
-  using UniqueDeviceArray = UniqueArray<T, MemoryLocation::DEVICE>;
+  using UniqueDeviceArray = UniqueArray<T, MemoryLocation::Device>;
 
   template<typename T, MemoryLocation Loc>
   auto make_unique_array(size_t count) {
-    if constexpr (Loc == MemoryLocation::HOST_PAGEABLE) {
+    if constexpr (Loc == MemoryLocation::Host) {
       return UniqueHostPageableArray<T>{std::make_unique_for_overwrite<T[]>(count)};
     }
-    else if constexpr (Loc == MemoryLocation::HOST_PINNED) {
-      T* host_pinned_ptr = {};
-      CUDA_CHECK(cudaMallocHost(reinterpret_cast<void**>(&host_pinned_ptr), count * sizeof(T)));
-      return UniqueHostPinnedArray<T>{host_pinned_ptr};
+    else if constexpr (Loc == MemoryLocation::HostPinned) {
+      T* HostPinned_ptr = {};
+      CUDA_CHECK(cudaMallocHost(reinterpret_cast<void**>(&HostPinned_ptr), count * sizeof(T)));
+      return UniqueHostPinnedArray<T>{HostPinned_ptr};
     }
-    else { // MemoryLocation::DEVICE
-      static_assert(Loc == MemoryLocation::DEVICE);
+    else { // MemoryLocation::Device
+      static_assert(Loc == MemoryLocation::Device);
       T* dev_ptr = {};
       CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&dev_ptr), count * sizeof(T)));
       return UniqueDeviceArray<T>{dev_ptr};
@@ -63,23 +63,23 @@ namespace gpu_lab {
   }
 
   template<typename T>
-  auto make_unique_host_pageable_array(size_t count) {
-    return make_unique_array<T, MemoryLocation::HOST_PAGEABLE>(count);
+  auto make_unique_host_array(size_t count) {
+    return make_unique_array<T, MemoryLocation::Host>(count);
   }
 
   template<typename T>
   auto make_unique_host_pinned_array(size_t count) {
-    return make_unique_array<T, MemoryLocation::HOST_PINNED>(count);
+    return make_unique_array<T, MemoryLocation::HostPinned>(count);
   }
 
   template<typename T>
   auto make_unique_device_array(size_t count) {
-    return make_unique_array<T, MemoryLocation::DEVICE>(count);
+    return make_unique_array<T, MemoryLocation::Device>(count);
   }
 
   template<typename T, MemoryLocation Loc>
   auto make_unique_array2d(size_t width, size_t height) {
-    if constexpr (Loc == MemoryLocation::DEVICE) {
+    if constexpr (Loc == MemoryLocation::Device) {
       T* dev_ptr   = {};
       size_t pitch = {};
       CUDA_CHECK(cudaMallocPitch(&dev_ptr, &pitch, width * sizeof(T), height));
@@ -92,17 +92,17 @@ namespace gpu_lab {
   }
 
   template<typename T>
-  auto make_unique_host_pageable_array2d(size_t width, size_t height) {
-    return make_unique_array2d<T, MemoryLocation::HOST_PAGEABLE>(width, height);
+  auto make_unique_host_array2d(size_t width, size_t height) {
+    return make_unique_array2d<T, MemoryLocation::Host>(width, height);
   }
 
   template<typename T>
   auto make_unique_host_pinned_array2d(size_t width, size_t height) {
-    return make_unique_array2d<T, MemoryLocation::HOST_PINNED>(width, height);
+    return make_unique_array2d<T, MemoryLocation::HostPinned>(width, height);
   }
 
   template<typename T>
   auto make_unique_device_array2d(size_t width, size_t height) {
-    return make_unique_array2d<T, MemoryLocation::DEVICE>(width, height);
+    return make_unique_array2d<T, MemoryLocation::Device>(width, height);
   }
 } // namespace gpu_lab

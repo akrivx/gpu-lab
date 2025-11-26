@@ -11,14 +11,14 @@ using namespace gpu_lab;
 
 // ----------------------------------- Compile-time checks -----------------------------------
 
-static_assert(HostPageableBufferView<int>::MEMORY_LOCATION == MemoryLocation::HOST_PAGEABLE);
-static_assert(HostPinnedBufferView<int>::MEMORY_LOCATION == MemoryLocation::HOST_PINNED);
-static_assert(DeviceBufferView<int>::MEMORY_LOCATION == MemoryLocation::DEVICE);
+static_assert(HostBufferView<int>::location() == MemoryLocation::Host);
+static_assert(HostPinnedBufferView<int>::location() == MemoryLocation::HostPinned);
+static_assert(DeviceBufferView<int>::location() == MemoryLocation::Device);
 
-static_assert(std::is_same_v<HostPageableBufferView<int>::element_type, int>);
-static_assert(std::is_same_v<HostPageableBufferView<const int>::element_type, const int>);
-static_assert(std::is_same_v<HostPageableBufferView<int>::value_type, int>);
-static_assert(std::is_same_v<HostPageableBufferView<const int>::value_type, int>);
+static_assert(std::is_same_v<HostBufferView<int>::element_type, int>);
+static_assert(std::is_same_v<HostBufferView<const int>::element_type, const int>);
+static_assert(std::is_same_v<HostBufferView<int>::value_type, int>);
+static_assert(std::is_same_v<HostBufferView<const int>::value_type, int>);
 
 static_assert(std::is_same_v<HostPinnedBufferView<int>::element_type, int>);
 static_assert(std::is_same_v<HostPinnedBufferView<const int>::element_type, const int>);
@@ -35,7 +35,7 @@ static_assert(std::is_same_v<DeviceBufferView<const int>::value_type, int>);
 TEST(BufferView, BasicPropertiesAndIndexing)
 {
   int data[4] = {1, 2, 3, 4};
-  HostPageableBufferView v{data, 4};
+  HostBufferView v{data, 4};
 
   EXPECT_EQ(v.data(), data);
   EXPECT_EQ(v.size(), 4u);
@@ -52,31 +52,31 @@ TEST(BufferView, BasicPropertiesAndIndexing)
 
 TEST(BufferView, EmptyView)
 {
-  HostPageableBufferView<int> v{nullptr, 0};
+  HostBufferView<int> v{nullptr, 0};
   EXPECT_EQ(v.data(), nullptr);
   EXPECT_EQ(v.size(), 0u);
   EXPECT_TRUE(v.empty());
 }
 
-TEST(BufferView, SubspanTakeDrop)
+TEST(BufferView, SubviewFirstLast)
 {
   int data[5] = {10, 20, 30, 40, 50};
-  HostPageableBufferView v{data, 5};
+  HostBufferView v{data, 5};
 
-  auto mid = v.subspan(1, 3);
+  auto mid = v.subview(1, 3);
   EXPECT_EQ(mid.size(), 3u);
   EXPECT_EQ(mid.data(), &data[1]);
   EXPECT_EQ(mid[0], 20);
   EXPECT_EQ(mid[1], 30);
   EXPECT_EQ(mid[2], 40);
 
-  auto first_two = v.take(2);
+  auto first_two = v.first(2);
   EXPECT_EQ(first_two.size(), 2u);
   EXPECT_EQ(first_two.data(), &data[0]);
   EXPECT_EQ(first_two[0], 10);
   EXPECT_EQ(first_two[1], 20);
 
-  auto last_three = v.drop(2);
+  auto last_three = v.last(3);
   EXPECT_EQ(last_three.size(), 3u);
   EXPECT_EQ(last_three.data(), &data[2]);
   EXPECT_EQ(last_three[0], 30);
@@ -87,13 +87,13 @@ TEST(BufferView, SubspanTakeDrop)
 TEST(BufferView, AsConst)
 {
   int data[3] = {7, 8, 9};
-  HostPageableBufferView v{data, 3};
+  HostBufferView v{data, 3};
 
-  auto cv = v.as_const();
+  auto cv = as_const(v);
 
   static_assert(std::is_same_v<
     decltype(cv),
-    HostPageableBufferView<const int>
+    HostBufferView<const int>
   >);
 
   EXPECT_EQ(cv.size(), 3u);
@@ -104,14 +104,14 @@ TEST(BufferView, AsConst)
 TEST(BufferView, RebindViewToSmallerElementType)
 {
   uint32_t data[4] = {0x11223344u, 0, 0, 0};
-  HostPageableBufferView v{data, 4};
+  HostBufferView v{data, 4};
 
   // Rebind to bytes: 4 * 4 = 16 bytes
-  auto bytes = v.as<std::uint8_t>();
+  auto bytes = view_cast<std::uint8_t>(v);
 
   static_assert(std::is_same_v<
     decltype(bytes),
-    HostPageableBufferView<std::uint8_t>
+    HostBufferView<std::uint8_t>
   >);
 
   EXPECT_EQ(bytes.size(), 16u);
@@ -130,8 +130,8 @@ TEST(BufferView, Copy)
   const int src_data[5] = {10, 20, 30, 40, 50};
   int dst_data[5] = {-1, -1, -1, -1, -1};
 
-  HostPageableBufferView src{src_data, 5};
-  HostPageableBufferView dst{dst_data, 5};
+  HostBufferView src{src_data, 5};
+  HostBufferView dst{dst_data, 5};
 
   copy(src, dst);
 
@@ -144,7 +144,7 @@ TEST(BufferView, Copy)
 
 TEST(Buffer, DefaultConstructedIsEmpty)
 {
-  HostPageableBuffer<int> buf;
+  HostBuffer<int> buf;
   EXPECT_EQ(buf.data(), nullptr);
   EXPECT_EQ(buf.size(), 0u);
   EXPECT_TRUE(buf.empty());
@@ -156,7 +156,7 @@ TEST(Buffer, DefaultConstructedIsEmpty)
 TEST(Buffer, SizedConstructAllocates)
 {
   constexpr size_t N = 16;
-  HostPageableBuffer<int> buf{N};
+  HostBuffer<int> buf{N};
 
   EXPECT_NE(buf.data(), nullptr);
   EXPECT_EQ(buf.size(), N);
@@ -170,13 +170,13 @@ TEST(Buffer, MoveConstructorTransfersOwnership)
 {
   constexpr size_t N = 8;
 
-  HostPageableBuffer<int> a{N};
+  HostBuffer<int> a{N};
   int* a_ptr = a.data();
   for (size_t i = 0; i < N; ++i) {
     a.data()[i] = static_cast<int>(i);
   }
 
-  HostPageableBuffer<int> b{std::move(a)};
+  HostBuffer<int> b{std::move(a)};
   EXPECT_EQ(a.data(), nullptr);
   EXPECT_EQ(a.size(), 0u);
 
@@ -193,12 +193,12 @@ TEST(Buffer, MoveAssignmentTransfersOwnership)
   constexpr size_t N = 8;
   constexpr size_t M = 4;
 
-  HostPageableBuffer<int> a{N};
+  HostBuffer<int> a{N};
   for (size_t i = 0; i < N; ++i) {
     a.data()[i] = static_cast<int>(i);
   }
 
-  HostPageableBuffer<int> b{M};
+  HostBuffer<int> b{M};
   EXPECT_NE(b.data(), nullptr);
 
   b = std::move(a);
@@ -215,7 +215,7 @@ TEST(Buffer, MoveAssignmentTransfersOwnership)
 TEST(Buffer, ReleaseResetsBufferAndReturnsHandle)
 {
   constexpr size_t N = 10;
-  HostPageableBuffer<int> buf{N};
+  HostBuffer<int> buf{N};
   int* raw_before = buf.data();
 
   auto handle = buf.release();
@@ -228,40 +228,40 @@ TEST(Buffer, ReleaseResetsBufferAndReturnsHandle)
   EXPECT_EQ(handle.get(), raw_before);
 }
 
-// ---------- Buffer view/cview/view_as tests ----------
+// ---------- Buffer view/cview tests ----------
 
 TEST(Buffer, ViewAndCViewTypes)
 {
-  HostPageableBuffer<int> buf{4};
+  HostBuffer<int> buf{4};
 
   auto v = buf.view();
   static_assert(std::is_same_v<
     decltype(v),
-    HostPageableBufferView<int>
+    HostBufferView<int>
   >);
 
   const auto& cbuf = buf;
   auto cv = cbuf.view();
   static_assert(std::is_same_v<
     decltype(cv),
-    HostPageableBufferView<const int>
+    HostBufferView<const int>
   >);
 
   auto cv2 = buf.cview();
   static_assert(std::is_same_v<
     decltype(cv2),
-    HostPageableBufferView<const int>
+    HostBufferView<const int>
   >);
 }
 
 TEST(Buffer, ViewAsRebindsElementType)
 {
-  HostPageableBuffer<std::uint32_t> buf{4};
-  auto bv = buf.view_as<std::uint8_t>();
+  HostBuffer<std::uint32_t> buf{4};
+  auto bv = view_as<std::uint8_t>(buf);
 
   static_assert(std::is_same_v<
     decltype(bv),
-    HostPageableBufferView<std::uint8_t>
+    HostBufferView<std::uint8_t>
   >);
 
   EXPECT_EQ(bv.size(), buf.size() * sizeof(std::uint32_t));
@@ -275,8 +275,8 @@ TEST(BufferCopy, SizeMismatchThrows)
   constexpr size_t N = 16;
   constexpr size_t M = 8;
 
-  HostPageableBuffer<int> small{M};
-  HostPageableBuffer<int> big{N};
+  HostBuffer<int> small{M};
+  HostBuffer<int> big{N};
 
   EXPECT_THROW(copy(small, big), std::runtime_error);
   EXPECT_THROW(copy(big, small), std::runtime_error);
@@ -285,8 +285,8 @@ TEST(BufferCopy, SizeMismatchThrows)
 TEST(BufferCopy, HostToHostCopy)
 {
   constexpr size_t N = 32;
-  HostPageableBuffer<int> src{N};
-  HostPageableBuffer<int> dst{N};
+  HostBuffer<int> src{N};
+  HostBuffer<int> dst{N};
 
   for (size_t i = 0; i < N; ++i) {
     src.data()[i] = static_cast<int>(i * 2);
@@ -304,7 +304,7 @@ TEST(BufferCopy, HostToDeviceAndBack)
 {
   constexpr size_t N = 64;
 
-  HostPageableBuffer<int> h_src{N};
+  HostBuffer<int> h_src{N};
   for (size_t i = 0; i < N; ++i) {
     h_src.data()[i] = static_cast<int>(i + 100);
   }
@@ -313,7 +313,7 @@ TEST(BufferCopy, HostToDeviceAndBack)
   auto d_buf = to_device_buffer(h_src);
 
   // Device -> Host
-  auto h_dst = to_host_pageable_buffer(d_buf);
+  auto h_dst = to_host_buffer(d_buf);
 
   ASSERT_EQ(h_dst.size(), N);
   for (size_t i = 0; i < N; ++i) {
@@ -351,7 +351,7 @@ TEST(BufferCopy, DeviceToHostCopy)
   constexpr size_t N = 64;
 
   // Initialise host source
-  HostPageableBuffer<int> h_src{N};
+  HostBuffer<int> h_src{N};
   for (size_t i = 0; i < N; ++i) {
     h_src.data()[i] = static_cast<int>(i * 5);
   }
@@ -360,7 +360,7 @@ TEST(BufferCopy, DeviceToHostCopy)
   auto d_src = to_device_buffer(h_src);
 
   // Prepare host destination
-  HostPageableBuffer<int> h_dst{N};
+  HostBuffer<int> h_dst{N};
   for (size_t i = 0; i < N; ++i) {
     h_dst.data()[i] = -1;
   }
@@ -377,7 +377,7 @@ TEST(BufferCopy, DeviceToDeviceCopy)
 {
   constexpr size_t N = 128;
 
-  HostPageableBuffer<int> h_src{N};
+  HostBuffer<int> h_src{N};
   for (size_t i = 0; i < N; ++i) {
     h_src.data()[i] = static_cast<int>(100 + i);
   }
@@ -388,7 +388,7 @@ TEST(BufferCopy, DeviceToDeviceCopy)
   // d_dst initially different
   DeviceBuffer<int> d_dst{N};
   {
-    HostPageableBuffer<int> h_tmp{N};
+    HostBuffer<int> h_tmp{N};
     for (size_t i = 0; i < N; ++i) {
       h_tmp.data()[i] = -1;
     }
@@ -399,7 +399,7 @@ TEST(BufferCopy, DeviceToDeviceCopy)
   copy(d_src, d_dst);
 
   // Copy d_dst back and compare
-  auto h_dst = to_host_pageable_buffer(d_dst);
+  auto h_dst = to_host_buffer(d_dst);
 
   for (size_t i = 0; i < N; ++i) {
     EXPECT_EQ(h_dst.data()[i], h_src.data()[i]);
@@ -410,12 +410,12 @@ TEST(BufferCopyAsync, DeviceToHost)
 {
   constexpr size_t N = 64;
 
-  HostPageableBuffer<int> h_src{N};
+  HostPinnedBuffer<int> h_src{N};
   for (size_t i = 0; i < N; ++i) {
     h_src.data()[i] = static_cast<int>(i + 1000);
   }
 
-  HostPageableBuffer<int> h_dst{N};
+  HostPinnedBuffer<int> h_dst{N};
   for (size_t i = 0; i < N; ++i) {
     h_dst.data()[i] = -1;
   }
@@ -440,7 +440,7 @@ TEST(BufferCopyAsync, DeviceToDevice)
 {
   constexpr size_t N = 128;
 
-  HostPageableBuffer<int> h_src{N};
+  HostPinnedBuffer<int> h_src{N};
   for (size_t i = 0; i < N; ++i) {
     h_src.data()[i] = static_cast<int>(42 + i);
   }
@@ -458,7 +458,7 @@ TEST(BufferCopyAsync, DeviceToDevice)
   ASSERT_EQ(cudaStreamDestroy(stream), cudaSuccess);
 
   // Bring d_dst back to host and compare
-  auto h_dst = to_host_pageable_buffer(d_dst);
+  auto h_dst = to_host_buffer(d_dst);
 
   for (size_t i = 0; i < N; ++i) {
     EXPECT_EQ(h_dst.data()[i], h_src.data()[i]);
