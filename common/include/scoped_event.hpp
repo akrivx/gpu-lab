@@ -24,7 +24,8 @@ namespace gpu_lab {
     }
   } // namespace detail
 
-  struct ScopedEvent {
+  class ScopedEvent {
+  public:
     explicit ScopedEvent(unsigned int flags = cudaEventDefault)
       : ev_{detail::make_unique_event(flags)} {}
 
@@ -46,6 +47,7 @@ namespace gpu_lab {
       return ev_.get();
     }
 
+  private:
     detail::UniqueEvent ev_;
   };
 } // namespace gpu_lab
