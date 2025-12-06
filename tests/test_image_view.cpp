@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include "image.hpp"
 #include "image_view.hpp"
 #include "memory_location.hpp"
 
