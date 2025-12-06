@@ -43,7 +43,7 @@ namespace gpu_lab {
       return *this;
     }
 
-    handle_type release() {
+    handle_type release() noexcept {
       size_ = {};
       return std::exchange(handle_, {});
     }
@@ -53,6 +53,7 @@ namespace gpu_lab {
     const element_type* cdata() const noexcept { return handle_.get(); }
 
     size_t size() const noexcept { return size_; }
+    size_t size_bytes() const noexcept { return size_ * sizeof(element_type); }
     bool empty() const noexcept { return size_ == 0; }
 
     view_type view() noexcept { return {data(), size()}; }
