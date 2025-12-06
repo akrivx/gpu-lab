@@ -34,28 +34,30 @@ namespace gpu_lab {
     };
   } // namespace detail
 
-  template<std::size_t H = cuda::std::dynamic_extent,
-           std::size_t W = cuda::std::dynamic_extent>
+  template<
+    std::size_t H = cuda::std::dynamic_extent,
+    std::size_t W = cuda::std::dynamic_extent>
   using ImageViewExtents = cuda::std::extents<std::size_t, H, W>;
 
   using DynamicImageViewExtents = ImageViewExtents<>;
 
   using ImageExtentRange = cuda::std::pair<std::size_t, std::size_t>;
 
-  template<typename T,
-           MemoryLocation Loc,
-           typename Extents = DynamicImageViewExtents>
+  template<
+    typename T,
+    MemoryLocation Loc,
+    typename Extents = DynamicImageViewExtents>
   using ImageView = cuda::std::mdspan<
     T,
     Extents,
     cuda::std::layout_stride,
-    detail::ByteOffsetAccessor<T, Loc>
-  >;
+    detail::ByteOffsetAccessor<T, Loc>>;
 
-  template<MemoryLocation Loc,
-           std::size_t H,
-           std::size_t W,
-           typename T>
+  template<
+    MemoryLocation Loc,
+    std::size_t H,
+    std::size_t W,
+    typename T>
   __host__ __device__ auto image_view(
     T*                     data,
     ImageViewExtents<H, W> extents,
