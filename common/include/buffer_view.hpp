@@ -19,41 +19,41 @@ namespace gpu_lab {
 
     static constexpr MemoryLocation location() { return Loc; }
 
-    __host__ __device__ BufferView(T* ptr, size_t n) noexcept
+    __host__ __device__ BufferView(T* ptr, std::size_t n) noexcept
       : data_{ptr}
       , size_{n}
     {}
 
     __host__ __device__ element_type* data() const noexcept { return data_; }
 
-    __host__ __device__ size_t size() const noexcept { return size_; }
-    __host__ __device__ size_t size_bytes() const noexcept { return size_ * sizeof(value_type); }
+    __host__ __device__ std::size_t size() const noexcept { return size_; }
+    __host__ __device__ std::size_t size_bytes() const noexcept { return size_ * sizeof(value_type); }
     __host__ __device__ bool empty() const noexcept { return size_ == 0; }
 
-    __host__ __device__ element_type& operator[](size_t i) const noexcept
+    __host__ __device__ element_type& operator[](std::size_t i) const noexcept
     {
       assert(i < size_);
       return data_[i];
     }
   
-    __host__ __device__ BufferView subview(size_t offset, size_t count) const noexcept {
+    __host__ __device__ BufferView subview(std::size_t offset, std::size_t count) const noexcept {
       assert((offset + count) <= size_);
       return {data_ + offset, count};
     }
 
-    __host__ __device__ BufferView first(size_t count) const noexcept {
+    __host__ __device__ BufferView first(std::size_t count) const noexcept {
       assert(count <= size_);
       return subview(0, count);
     }
 
-    __host__ __device__ BufferView last(size_t count) const noexcept {
+    __host__ __device__ BufferView last(std::size_t count) const noexcept {
       assert(count <= size_);
       return subview(size_ - count, count);
     }
 
   private:
-    T*     data_ = {};
-    size_t size_ = {};
+    T*          data_ = {};
+    std::size_t size_ = {};
   };
 
   namespace detail {

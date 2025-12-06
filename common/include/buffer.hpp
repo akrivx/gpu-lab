@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 
@@ -25,7 +26,7 @@ namespace gpu_lab {
     Buffer(const Buffer&) = delete;
     Buffer& operator=(const Buffer&) = delete;
 
-    explicit Buffer(size_t count)
+    explicit Buffer(std::size_t count)
       : handle_{make_unique_array<T, Loc>(count)}
       , size_{count}
     {}
@@ -52,8 +53,8 @@ namespace gpu_lab {
     const element_type* data() const noexcept { return handle_.get(); }
     const element_type* cdata() const noexcept { return handle_.get(); }
 
-    size_t size() const noexcept { return size_; }
-    size_t size_bytes() const noexcept { return size_ * sizeof(element_type); }
+    std::size_t size() const noexcept { return size_; }
+    std::size_t size_bytes() const noexcept { return size_ * sizeof(element_type); }
     bool empty() const noexcept { return size_ == 0; }
 
     view_type view() noexcept { return {data(), size()}; }
@@ -62,7 +63,7 @@ namespace gpu_lab {
 
   private:
     handle_type handle_ = {};
-    size_t      size_   = {};
+    std::size_t size_   = {};
   };
 
   template<typename To, typename From, MemoryLocation Loc>
