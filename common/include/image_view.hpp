@@ -38,11 +38,13 @@ namespace gpu_lab {
            std::size_t TileW = cuda::std::dynamic_extent>
   using ImageViewExtents = cuda::std::extents<std::size_t, TileH, TileW>;
 
+  using DynamicImageViewExtents = ImageViewExtents<>;
+
   using ImageExtentRange = cuda::std::pair<std::size_t, std::size_t>;
 
   template<typename T,
            MemoryLocation Loc,
-           typename Extents = ImageViewExtents<>>
+           typename Extents = DynamicImageViewExtents>
   using ImageView = cuda::std::mdspan<
     T,
     Extents,
@@ -70,7 +72,7 @@ namespace gpu_lab {
     std::size_t height,
     std::size_t pitch_bytes)
   {
-    return image_view<Loc>(data, ImageViewExtents<>{height, width}, pitch_bytes);
+    return image_view<Loc>(data, DynamicImageViewExtents{height, width}, pitch_bytes);
   }
 
   namespace detail {
