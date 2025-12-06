@@ -55,9 +55,9 @@ namespace gpu_lab {
 
   template<
     MemoryLocation Loc,
+    typename T,
     std::size_t H,
-    std::size_t W,
-    typename T>
+    std::size_t W>
   __host__ __device__ auto image_view(
     T*                     data,
     ImageViewExtents<H, W> extents,
