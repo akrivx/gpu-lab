@@ -70,8 +70,7 @@ namespace gpu_lab {
     const std::size_t bytes = v.size_bytes();
     return BufferView<To, Loc>{
         reinterpret_cast<To*>(v.data()),
-        bytes / sizeof(To)
-    };
+        bytes / sizeof(To)};
   }
 
   template<typename T, MemoryLocation Loc>
@@ -92,14 +91,13 @@ namespace gpu_lab {
   namespace detail {
     template<typename SrcView, typename DstView>
     concept ViewCopyCompatible =
-      std::same_as<typename SrcView::value_type, typename DstView::value_type> &&
-      !std::is_const_v<typename DstView::element_type>;
+      std::same_as<typename SrcView::value_type, typename DstView::value_type>
+      && !std::is_const_v<typename DstView::element_type>;
     
     template<typename SrcView, typename DstView>
     concept ViewCopyAsyncCompatible =
-      ViewCopyCompatible<SrcView, DstView> &&
-      (SrcView::location() == MemoryLocation::Device ||
-       DstView::location() == MemoryLocation::Device);
+      ViewCopyCompatible<SrcView, DstView>
+      && (SrcView::location() == MemoryLocation::Device || DstView::location() == MemoryLocation::Device);
     
     template<typename SrcView, typename DstView>
       requires ViewCopyCompatible<SrcView, DstView>
@@ -123,15 +121,12 @@ namespace gpu_lab {
       if (src.size() != dst.size()) {
         throw std::runtime_error{"copy_async: size mismatch"};
       }
-      CUDA_CHECK(
-        cudaMemcpyAsync(
-          dst.data(),
-          src.data(),
-          src.size() * sizeof(typename SrcView::value_type),
-          get_memcpy_kind<SrcView::location(), DstView::location()>(),
-          stream
-        )
-      );
+      CUDA_CHECK(cudaMemcpyAsync(
+        dst.data(),
+        src.data(),
+        src.size() * sizeof(typename SrcView::value_type),
+        get_memcpy_kind<SrcView::location(), DstView::location()>(),
+        stream));
     }
   } // namespace detail
 
