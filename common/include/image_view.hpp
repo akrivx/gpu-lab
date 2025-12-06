@@ -34,9 +34,9 @@ namespace gpu_lab {
     };
   } // namespace detail
 
-  template<std::size_t TileH = cuda::std::dynamic_extent,
-           std::size_t TileW = cuda::std::dynamic_extent>
-  using ImageViewExtents = cuda::std::extents<std::size_t, TileH, TileW>;
+  template<std::size_t H = cuda::std::dynamic_extent,
+           std::size_t W = cuda::std::dynamic_extent>
+  using ImageViewExtents = cuda::std::extents<std::size_t, H, W>;
 
   using DynamicImageViewExtents = ImageViewExtents<>;
 
@@ -53,12 +53,13 @@ namespace gpu_lab {
   >;
 
   template<MemoryLocation Loc,
-           typename T,
-           typename Extents>
+           std::size_t H,
+           std::size_t W,
+           typename T>
   __host__ __device__ auto image_view(
-    T*          data,
-    Extents     extents,
-    std::size_t pitch_bytes)
+    T*                     data,
+    ImageViewExtents<H, W> extents,
+    std::size_t            pitch_bytes)
   {
     cuda::std::array<std::size_t, 2> strides{pitch_bytes, sizeof(T)};
     auto mapping = cuda::std::layout_stride::mapping(extents, strides);
@@ -103,12 +104,12 @@ namespace gpu_lab {
     return ImageView<const value_type, Loc, Extents>{v.data_handle(), v.mapping()};
   }
 
-  template<typename T, typename Extents = ImageViewExtents<>>
+  template<typename T, typename Extents = DynamicImageViewExtents>
   using HostImageView = ImageView<T, MemoryLocation::Host, Extents>;
 
-  template<typename T, typename Extents = ImageViewExtents<>>
+  template<typename T, typename Extents = DynamicImageViewExtents>
   using HostPinnedImageView = ImageView<T, MemoryLocation::HostPinned, Extents>;
 
-  template<typename T, typename Extents = ImageViewExtents<>>
+  template<typename T, typename Extents = DynamicImageViewExtents>
   using DeviceImageView = ImageView<T, MemoryLocation::Device, Extents>;
 } // namespace gpu_lab
