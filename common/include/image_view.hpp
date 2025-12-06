@@ -34,28 +34,29 @@ namespace gpu_lab {
     };
   } // namespace detail
 
-  template <std::size_t TileH = cuda::std::dynamic_extent,
-            std::size_t TileW = cuda::std::dynamic_extent>
+  template<std::size_t TileH = cuda::std::dynamic_extent,
+           std::size_t TileW = cuda::std::dynamic_extent>
   using ImageViewExtents = cuda::std::extents<std::size_t, TileH, TileW>;
 
   using ImageExtentRange = cuda::std::pair<std::size_t, std::size_t>;
 
-  template<typename T, MemoryLocation Loc>
+  template<typename T,
+           MemoryLocation Loc,
+           typename Extents = ImageViewExtents<>>
   using ImageView = cuda::std::mdspan<
     T,
-    ImageViewExtents<>,
+    Extents,
     cuda::std::layout_stride,
     detail::ByteOffsetAccessor<T, Loc>
   >;
 
-  template <MemoryLocation Loc,
-            typename T,
-            std::size_t TileH,
-            std::size_t TileW>
+  template<MemoryLocation Loc,
+           typename T,
+           typename Extents>
   __host__ __device__ auto image_view(
-    T*                             data,
-    ImageViewExtents<TileH, TileW> extents,
-    std::size_t                    pitch_bytes)
+    T*          data,
+    Extents     extents,
+    std::size_t pitch_bytes)
   {
     cuda::std::array<std::size_t, 2> strides{pitch_bytes, sizeof(T)};
     auto mapping = cuda::std::layout_stride::mapping(extents, strides);
@@ -73,39 +74,39 @@ namespace gpu_lab {
   }
 
   namespace detail {
-    template<typename T, MemoryLocation Loc, typename R, typename C>
-    __host__ __device__ ImageView<T, Loc> subview(ImageView<T, Loc> v, R r, C c) {
+    template<typename T, MemoryLocation Loc, typename Extents, typename R, typename C>
+    __host__ __device__ ImageView<T, Loc, Extents> subview(ImageView<T, Loc, Extents> v, R r, C c) {
       return cuda::std::submdspan(v, r, c);
     }   
   }
 
-  template<typename T, MemoryLocation Loc>
-  __host__ __device__ auto subrows(ImageView<T, Loc> v, ImageExtentRange r) {
+  template<typename T, MemoryLocation Loc, typename Extents>
+  __host__ __device__ auto subrows(ImageView<T, Loc, Extents> v, ImageExtentRange r) {
     return detail::subview(v, r, cuda::std::full_extent);
   }
 
-  template<typename T, MemoryLocation Loc>
-  __host__ __device__ auto subcols(ImageView<T, Loc> v, ImageExtentRange c) {
+  template<typename T, MemoryLocation Loc, typename Extents>
+  __host__ __device__ auto subcols(ImageView<T, Loc, Extents> v, ImageExtentRange c) {
     return detail::subview(v, cuda::std::full_extent, c);
   }
 
-  template<typename T, MemoryLocation Loc>
-  __host__ __device__ auto subview(ImageView<T, Loc> v, ImageExtentRange r, ImageExtentRange c) {
+  template<typename T, MemoryLocation Loc, typename Extents>
+  __host__ __device__ auto subview(ImageView<T, Loc, Extents> v, ImageExtentRange r, ImageExtentRange c) {
     return detail::subview(v, r, c);
   }
 
-  template<typename T, MemoryLocation Loc>
-  __host__ __device__ auto as_const(ImageView<T, Loc> v) {
-    using value_type = typename ImageView<T, Loc>::value_type;
-    return ImageView<const value_type, Loc>{v.data_handle(), v.mapping()};
+  template<typename T, MemoryLocation Loc, typename Extents>
+  __host__ __device__ auto as_const(ImageView<T, Loc, Extents> v) {
+    using value_type = typename ImageView<T, Loc, Extents>::value_type;
+    return ImageView<const value_type, Loc, Extents>{v.data_handle(), v.mapping()};
   }
 
-  template<typename T>
-  using HostImageView = ImageView<T, MemoryLocation::Host>;
+  template<typename T, typename Extents = ImageViewExtents<>>
+  using HostImageView = ImageView<T, MemoryLocation::Host, Extents>;
 
-  template<typename T>
-  using HostPinnedImageView = ImageView<T, MemoryLocation::HostPinned>;
+  template<typename T, typename Extents = ImageViewExtents<>>
+  using HostPinnedImageView = ImageView<T, MemoryLocation::HostPinned, Extents>;
 
-  template<typename T>
-  using DeviceImageView = ImageView<T, MemoryLocation::Device>;
+  template<typename T, typename Extents = ImageViewExtents<>>
+  using DeviceImageView = ImageView<T, MemoryLocation::Device, Extents>;
 } // namespace gpu_lab
