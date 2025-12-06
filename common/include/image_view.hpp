@@ -65,7 +65,7 @@ namespace gpu_lab {
 
   namespace detail {
     template<typename T, MemoryLocation Loc, typename R, typename C>
-    __host__ __device__ auto subview(ImageView<T, Loc> v, R r, C c) {
+    __host__ __device__ ImageView<T, Loc> subview(ImageView<T, Loc> v, R r, C c) {
       return cuda::std::submdspan(v, r, c);
     }   
   }
