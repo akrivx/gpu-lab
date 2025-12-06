@@ -32,23 +32,35 @@ namespace gpu_lab {
         return reinterpret_cast<data_handle_type>(bp + i);
       }
     };
-
-    using ImageViewExtents = cuda::std::extents<
-      std::size_t,
-      cuda::std::dynamic_extent,
-      cuda::std::dynamic_extent
-    >;
   } // namespace detail
+
+  template <std::size_t TileH = cuda::std::dynamic_extent,
+            std::size_t TileW = cuda::std::dynamic_extent>
+  using ImageViewExtents = cuda::std::extents<std::size_t, TileH, TileW>;
 
   using ImageExtentRange = cuda::std::pair<std::size_t, std::size_t>;
 
   template<typename T, MemoryLocation Loc>
   using ImageView = cuda::std::mdspan<
     T,
-    detail::ImageViewExtents,
+    ImageViewExtents<>,
     cuda::std::layout_stride,
     detail::ByteOffsetAccessor<T, Loc>
   >;
+
+  template <MemoryLocation Loc,
+            typename T,
+            std::size_t TileH,
+            std::size_t TileW>
+  __host__ __device__ auto image_view(
+    T*                             data,
+    ImageViewExtents<TileH, TileW> extents,
+    std::size_t                    pitch_bytes)
+  {
+    cuda::std::array<std::size_t, 2> strides{pitch_bytes, sizeof(T)};
+    auto mapping = cuda::std::layout_stride::mapping(extents, strides);
+    return ImageView<T, Loc>{data, mapping};
+  }
 
   template<MemoryLocation Loc, typename T>
   __host__ __device__ auto image_view(
@@ -57,10 +69,7 @@ namespace gpu_lab {
     std::size_t height,
     std::size_t pitch_bytes)
   {
-    detail::ImageViewExtents extents{height, width};
-    cuda::std::array<std::size_t, 2> strides{pitch_bytes, sizeof(T)};
-    auto mapping = cuda::std::layout_stride::mapping(extents, strides);
-    return ImageView<T, Loc>{data, mapping};
+    return image_view<Loc>(data, ImageViewExtents<>{height, width}, pitch_bytes);
   }
 
   namespace detail {
