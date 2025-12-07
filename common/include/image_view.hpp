@@ -6,6 +6,7 @@
 #include <cuda_runtime.h>
 
 #include "memory_location.hpp"
+#include "pitched_element.hpp"
 
 namespace gpu_lab {
   namespace detail {
@@ -44,7 +45,7 @@ namespace gpu_lab {
   using ImageExtentRange = cuda::std::pair<std::size_t, std::size_t>;
 
   template<
-    typename T,
+    PitchedElement T,
     MemoryLocation Loc,
     typename Extents = DynamicImageViewExtents>
   using ImageView = cuda::std::mdspan<
@@ -55,7 +56,7 @@ namespace gpu_lab {
 
   template<
     MemoryLocation Loc,
-    typename T,
+    PitchedElement T,
     std::size_t H,
     std::size_t W>
   __host__ __device__ auto image_view(
@@ -68,7 +69,7 @@ namespace gpu_lab {
     return ImageView<T, Loc>{data, mapping};
   }
 
-  template<MemoryLocation Loc, typename T>
+  template<MemoryLocation Loc, PitchedElement T>
   __host__ __device__ auto image_view(
     T*          data,
     std::size_t width,
@@ -79,39 +80,39 @@ namespace gpu_lab {
   }
 
   namespace detail {
-    template<typename T, MemoryLocation Loc, typename Extents, typename R, typename C>
+    template<PitchedElement T, MemoryLocation Loc, typename Extents, typename R, typename C>
     __host__ __device__ ImageView<T, Loc, Extents> subview(ImageView<T, Loc, Extents> v, R r, C c) {
       return cuda::std::submdspan(v, r, c);
     }   
   } // namespace detail
 
-  template<typename T, MemoryLocation Loc, typename Extents>
+  template<PitchedElement T, MemoryLocation Loc, typename Extents>
   __host__ __device__ auto subrows(ImageView<T, Loc, Extents> v, ImageExtentRange r) {
     return detail::subview(v, r, cuda::std::full_extent);
   }
 
-  template<typename T, MemoryLocation Loc, typename Extents>
+  template<PitchedElement T, MemoryLocation Loc, typename Extents>
   __host__ __device__ auto subcols(ImageView<T, Loc, Extents> v, ImageExtentRange c) {
     return detail::subview(v, cuda::std::full_extent, c);
   }
 
-  template<typename T, MemoryLocation Loc, typename Extents>
+  template<PitchedElement T, MemoryLocation Loc, typename Extents>
   __host__ __device__ auto subview(ImageView<T, Loc, Extents> v, ImageExtentRange r, ImageExtentRange c) {
     return detail::subview(v, r, c);
   }
 
-  template<typename T, MemoryLocation Loc, typename Extents>
+  template<PitchedElement T, MemoryLocation Loc, typename Extents>
   __host__ __device__ auto as_const(ImageView<T, Loc, Extents> v) {
     using value_type = typename ImageView<T, Loc, Extents>::value_type;
     return ImageView<const value_type, Loc, Extents>{v.data_handle(), v.mapping()};
   }
 
-  template<typename T, typename Extents = DynamicImageViewExtents>
+  template<PitchedElement T, typename Extents = DynamicImageViewExtents>
   using HostImageView = ImageView<T, MemoryLocation::Host, Extents>;
 
-  template<typename T, typename Extents = DynamicImageViewExtents>
+  template<PitchedElement T, typename Extents = DynamicImageViewExtents>
   using HostPinnedImageView = ImageView<T, MemoryLocation::HostPinned, Extents>;
 
-  template<typename T, typename Extents = DynamicImageViewExtents>
+  template<PitchedElement T, typename Extents = DynamicImageViewExtents>
   using DeviceImageView = ImageView<T, MemoryLocation::Device, Extents>;
 } // namespace gpu_lab

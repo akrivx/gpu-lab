@@ -10,9 +10,10 @@
 #include "memory_location.hpp"
 #include "unique_array.hpp"
 #include "image_view.hpp"
+#include "pitched_element.hpp"
 
 namespace gpu_lab {
-  template<typename T, MemoryLocation Loc>
+  template<PitchedElement T, MemoryLocation Loc>
   class [[nodiscard]] Image {
   public:
     using handle_type = UniqueArray<T, Loc>;
