@@ -15,4 +15,5 @@ set_target_properties(gpu_lab_common PROPERTIES
 target_link_libraries(gpu_lab_common
   PUBLIC
     gpu_lab_options
+    gpu_lab_pitch_config
 )

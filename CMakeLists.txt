@@ -67,6 +67,12 @@ target_link_libraries(gpu_lab_options INTERFACE
 )
 
 # -----------------------------
+# GPU Lab pitch auto-config
+# -----------------------------
+include(cmake/gpu_lab_pitch_config.cmake)
+gpu_lab_enable_pitch_config()
+
+# -----------------------------
 # Subdirectories
 # -----------------------------
 add_subdirectory(common)
