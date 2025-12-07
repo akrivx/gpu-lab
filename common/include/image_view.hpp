@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cuda/std/array>
 #include <cuda/std/mdspan>
 
 #include <cuda_runtime.h>
@@ -45,17 +46,29 @@ namespace gpu_lab {
 
   template<
     MemoryLocation Loc,
-    PitchedElement T,
     std::size_t H,
-    std::size_t W>
+    std::size_t W,
+    PitchedElement T>
   __host__ __device__ auto image_view(
-    T*                     data,
-    ImageViewExtents<H, W> extents,
-    std::size_t            pitch)
+    T*                                      data,
+    const cuda::std::array<std::size_t, 2>& strides,
+    const ImageViewExtents<H, W>&           extents = {})
   {
-    cuda::std::array<std::size_t, 2> strides{pitch, 1};
     auto mapping = cuda::std::layout_stride::mapping(extents, strides);
     return ImageView<T, Loc>{data, mapping};
+  }
+
+  template<
+    MemoryLocation Loc,
+    std::size_t H,
+    std::size_t W,
+    PitchedElement T>
+  __host__ __device__ auto image_view(
+    T*                            data,
+    std::size_t                   pitch,
+    const ImageViewExtents<H, W>& extents = {})
+  {
+    return image_view<Loc>(data, {pitch, 1}, extents);
   }
 
   template<MemoryLocation Loc, PitchedElement T>
@@ -65,7 +78,7 @@ namespace gpu_lab {
     std::size_t height,
     std::size_t pitch)
   {
-    return image_view<Loc>(data, DynamicImageViewExtents{height, width}, pitch);
+    return image_view<Loc>(data, pitch, DynamicImageViewExtents{height, width});
   }
 
   namespace detail {
