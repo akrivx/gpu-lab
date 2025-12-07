@@ -10,28 +10,17 @@
 
 namespace gpu_lab {
   namespace detail {
-    template<typename T, MemoryLocation Loc>
-    struct ByteOffsetAccessor {
-      using element_type     = T;
-      using reference        = element_type&;
-      using data_handle_type = element_type*;
-      using offset_policy    = ByteOffsetAccessor<T, Loc>;
-      using index_type       = std::ptrdiff_t;
+    template<class T, MemoryLocation Loc>
+    struct ImageAccessor : cuda::std::default_accessor<T> {
+      // Base typedefs inherited but offset_policy must be redefined
+      using offset_policy = ImageAccessor;
 
-      static constexpr MemoryLocation location() { return Loc; }
+      using base_type     = cuda::std::default_accessor<T>;
+    
+      // Inherit constructors to use like default_accessor
+      using base_type::base_type;
 
-      __host__ __device__
-      constexpr reference access(data_handle_type p, index_type i) const noexcept {
-        return *offset(p, i);
-      }
-
-      __host__ __device__
-      constexpr data_handle_type offset(data_handle_type p, index_type i) const noexcept {
-        // i is a linear offset IN BYTES
-        using byte_t = std::conditional_t<std::is_const_v<element_type>, const std::byte, std::byte>;
-        auto bp = reinterpret_cast<byte_t*>(p);
-        return reinterpret_cast<data_handle_type>(bp + i);
-      }
+      static constexpr MemoryLocation location() noexcept { return Loc; }
     };
   } // namespace detail
 
@@ -52,7 +41,7 @@ namespace gpu_lab {
     T,
     Extents,
     cuda::std::layout_stride,
-    detail::ByteOffsetAccessor<T, Loc>>;
+    detail::ImageAccessor<T, Loc>>;
 
   template<
     MemoryLocation Loc,
@@ -62,9 +51,9 @@ namespace gpu_lab {
   __host__ __device__ auto image_view(
     T*                     data,
     ImageViewExtents<H, W> extents,
-    std::size_t            pitch_bytes)
+    std::size_t            pitch)
   {
-    cuda::std::array<std::size_t, 2> strides{pitch_bytes, sizeof(T)};
+    cuda::std::array<std::size_t, 2> strides{pitch, 1};
     auto mapping = cuda::std::layout_stride::mapping(extents, strides);
     return ImageView<T, Loc>{data, mapping};
   }
@@ -74,9 +63,9 @@ namespace gpu_lab {
     T*          data,
     std::size_t width,
     std::size_t height,
-    std::size_t pitch_bytes)
+    std::size_t pitch)
   {
-    return image_view<Loc>(data, DynamicImageViewExtents{height, width}, pitch_bytes);
+    return image_view<Loc>(data, DynamicImageViewExtents{height, width}, pitch);
   }
 
   namespace detail {

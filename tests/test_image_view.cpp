@@ -22,7 +22,6 @@ static_assert(DeviceImageView<int>::accessor_type::location() == MemoryLocation:
 struct TestRawImage {
   static constexpr std::size_t N = 8;
   static constexpr std::size_t STRIDE = 8;
-  static constexpr std::size_t STRIDE_BYTES = STRIDE * sizeof(int);
 
   int data[N][N];
 
@@ -35,7 +34,7 @@ struct TestRawImage {
   }
 
   auto view_5x4() {
-    return image_view<MemoryLocation::Host>(&data[0][0], 4, 5, STRIDE_BYTES);
+    return image_view<MemoryLocation::Host>(&data[0][0], 4, 5, STRIDE);
   }
 };
 
@@ -47,8 +46,8 @@ TEST(ImageView, BasicPropertiesAndIndexing)
 
   EXPECT_EQ(img_5x4.extent(0), 5);
   EXPECT_EQ(img_5x4.extent(1), 4);
-  EXPECT_EQ(img_5x4.stride(0), TestRawImage::STRIDE_BYTES);
-  EXPECT_EQ(img_5x4.stride(1), sizeof(int));
+  EXPECT_EQ(img_5x4.stride(0), TestRawImage::STRIDE);
+  EXPECT_EQ(img_5x4.stride(1), 1);
 
   for (std::size_t y = 0; y < img_5x4.extent(0); ++y) {
     for (std::size_t x = 0; x < img_5x4.extent(1); ++x) {
