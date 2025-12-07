@@ -34,7 +34,7 @@ struct TestRawImage {
   }
 
   auto view_5x4() {
-    return image_view<MemoryLocation::Host>(&data[0][0], 4, 5, STRIDE);
+    return image_view<MemoryLocation::Host>(&data[0][0], STRIDE, 5, 4);
   }
 };
 

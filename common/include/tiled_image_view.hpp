@@ -111,8 +111,8 @@ namespace gpu_lab {
     PitchedElement T>
   __host__ __device__ auto tiled_image_view(
     T*                                      data,
-    const DynamicImageViewExtents&          image_extents,
     const cuda::std::array<std::size_t, 2>& image_strides,
+    const DynamicImageViewExtents&          image_extents,
     const ImageViewExtents<TileH, TileW>&   tile_extents = {})
   {
     using detail::get_extent;
@@ -146,14 +146,14 @@ namespace gpu_lab {
     PitchedElement T>
   __host__ __device__ auto tiled_image_view(
     T*                                    data,
-    const DynamicImageViewExtents&        image_extents,
     std::size_t                           image_pitch,
+    const DynamicImageViewExtents&        image_extents,
     const ImageViewExtents<TileH, TileW>& tile_extents = {})
   {
     return tiled_image_view(
       data,
-      image_extents,
       {image_pitch, 1},
+      image_extents,
       tile_extents);
   }
 
@@ -164,15 +164,15 @@ namespace gpu_lab {
     PitchedElement T>
   __host__ __device__ auto tiled_image_view(
     T*                                    data,
-    std::size_t                           image_width,
-    std::size_t                           image_height,
     std::size_t                           image_pitch,
+    std::size_t                           image_height,
+    std::size_t                           image_width,
     const ImageViewExtents<TileH, TileW>& tile_extents = {})
   {
     return tiled_image_view(
       data,
-      {image_width, image_height},
       {image_pitch, 1},
+      {image_height, image_width},
       tile_extents);
   }
 
@@ -187,16 +187,16 @@ namespace gpu_lab {
   {
     return tiled_image_view(
       &v(0, 0),
-      v.extents(),
       {v.stride(0), v.stride(1)},
+      v.extents(),
       tile_extents);
   }
 
   template<PitchedElement T, MemoryLocation Loc>
   __host__ __device__ auto tiled_image_view(
     ImageView<T, Loc> v,
-    std::size_t       tile_width,
-    std::size_t       tile_height)
+    std::size_t       tile_height,
+    std::size_t       tile_width)
   {
     return tiled_image_view(
       v,

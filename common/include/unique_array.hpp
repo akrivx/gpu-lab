@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <type_traits>
 
@@ -45,7 +46,7 @@ namespace gpu_lab {
   using UniqueDeviceArray = UniqueArray<T, MemoryLocation::Device>;
 
   template<typename T, MemoryLocation Loc>
-  auto make_unique_array(size_t count) {
+  auto make_unique_array(std::size_t count) {
     if constexpr (Loc == MemoryLocation::Host) {
       return UniqueHostPageableArray<T>{std::make_unique_for_overwrite<T[]>(count)};
     }
@@ -63,46 +64,46 @@ namespace gpu_lab {
   }
 
   template<typename T>
-  auto make_unique_host_array(size_t count) {
+  auto make_unique_host_array(std::size_t count) {
     return make_unique_array<T, MemoryLocation::Host>(count);
   }
 
   template<typename T>
-  auto make_unique_host_pinned_array(size_t count) {
+  auto make_unique_host_pinned_array(std::size_t count) {
     return make_unique_array<T, MemoryLocation::HostPinned>(count);
   }
 
   template<typename T>
-  auto make_unique_device_array(size_t count) {
+  auto make_unique_device_array(std::size_t count) {
     return make_unique_array<T, MemoryLocation::Device>(count);
   }
 
   template<typename T, MemoryLocation Loc>
-  auto make_unique_array2d(size_t width, size_t height) {
+  auto make_unique_array2d(std::size_t height, std::size_t width) {
     if constexpr (Loc == MemoryLocation::Device) {
       T* dev_ptr   = {};
-      size_t pitch = {};
+      std::size_t pitch = {};
       CUDA_CHECK(cudaMallocPitch(&dev_ptr, &pitch, width * sizeof(T), height));
       return std::make_pair(UniqueDeviceArray<T>{dev_ptr}, pitch);
     }
     else {
-      size_t pitch = width * sizeof(T);
+      std::size_t pitch = width * sizeof(T);
       return std::make_pair(make_unique_array<T, Loc>(width * height), pitch);
     }
   }
 
   template<typename T>
-  auto make_unique_host_array2d(size_t width, size_t height) {
-    return make_unique_array2d<T, MemoryLocation::Host>(width, height);
+  auto make_unique_host_array2d(std::size_t height, std::size_t width) {
+    return make_unique_array2d<T, MemoryLocation::Host>(height, width);
   }
 
   template<typename T>
-  auto make_unique_host_pinned_array2d(size_t width, size_t height) {
-    return make_unique_array2d<T, MemoryLocation::HostPinned>(width, height);
+  auto make_unique_host_pinned_array2d(std::size_t height, std::size_t width) {
+    return make_unique_array2d<T, MemoryLocation::HostPinned>(height, width);
   }
 
   template<typename T>
-  auto make_unique_device_array2d(size_t width, size_t height) {
-    return make_unique_array2d<T, MemoryLocation::Device>(width, height);
+  auto make_unique_device_array2d(std::size_t height, std::size_t width) {
+    return make_unique_array2d<T, MemoryLocation::Device>(height, width);
   }
 } // namespace gpu_lab

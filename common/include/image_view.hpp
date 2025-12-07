@@ -74,9 +74,9 @@ namespace gpu_lab {
   template<MemoryLocation Loc, PitchedElement T>
   __host__ __device__ auto image_view(
     T*          data,
-    std::size_t width,
+    std::size_t pitch,
     std::size_t height,
-    std::size_t pitch)
+    std::size_t width)
   {
     return image_view<Loc>(data, pitch, DynamicImageViewExtents{height, width});
   }
