@@ -1,12 +1,12 @@
 #include <cstddef>
-// #include <vector>
-// #include <type_traits>
 
 #include <gtest/gtest.h>
 
 #include "image.hpp"
 #include "image_view.hpp"
+#include "tiled_image_view.hpp"
 #include "memory_location.hpp"
+#include "gpu_lab_config.hpp"  // generated in the build dir
 
 using namespace gpu_lab;
 
@@ -178,5 +178,73 @@ TEST(ImageView, AsConst)
   for (int i = 0; i < 2; ++i) {
     EXPECT_EQ(img_5x4.extent(i), const_img_5x4.extent(i));
     EXPECT_EQ(img_5x4.stride(i), const_img_5x4.stride(i));
+  }
+}
+
+
+// ------------ PitchedElement compile-time tests ------------
+
+namespace {
+  static_assert(gpu_lab::cuda_pitch_alignment != 0,
+               "cuda_pitch_alignment must be non-zero");
+
+  // helper types
+  struct Size3 { std::uint8_t v[3]; };   // sizeof == 3
+  struct Size5 { std::uint8_t v[5]; };   // sizeof == 5
+  struct SizeMax { std::uint8_t v[gpu_lab::cuda_pitch_alignment]; };
+
+  struct PixelRGBA { std::uint8_t r, g, b, a; };
+  static_assert(sizeof(PixelRGBA) == 4);
+
+  // Non-trivially copyable:
+  struct NonTrivial {
+    NonTrivial(const NonTrivial&) {}
+    int x;
+  };
+  
+  // --- Positive cases ---
+  static_assert(PitchedElement<std::uint8_t>);
+  static_assert(PitchedElement<std::uint16_t>);
+  static_assert(PitchedElement<std::uint32_t>);
+  static_assert(PitchedElement<float>);
+  static_assert(PitchedElement<SizeMax>);
+  static_assert(PitchedElement<PixelRGBA>);
+  
+  // --- Negative cases ---
+  static_assert(!PitchedElement<Size3>);  // sizeof == 3, won't divide a power-of-two
+  static_assert(!PitchedElement<Size5>);  // sizeof == 5
+  static_assert(!PitchedElement<NonTrivial>);
+} // namespace (anonymous)
+
+
+// ------------ TiledImageView tests ------------
+
+TEST(TiledImageView, BasicPropertiesAndIndexing)
+{
+  constexpr std::size_t H = 50;
+  constexpr std::size_t W = 200;
+
+  constexpr std::size_t TILE_H = 10;
+  constexpr std::size_t TILE_W = 50;
+
+  HostImage<int> img{H, W};
+  
+  {
+    auto tiles_static = tiled_image_view<TILE_H, TILE_W>(img);
+    auto tiles_dynamic = tiled_image_view(img, TILE_H, TILE_W);
+
+    EXPECT_EQ(tiles_static.extent(0), 5);
+    EXPECT_EQ(tiles_static.extent(1), 4);
+
+    EXPECT_EQ(tiles_static.extent(0), tiles_dynamic.extent(0));
+    EXPECT_EQ(tiles_static.extent(1), tiles_dynamic.extent(1));
+
+    for (std::size_t y = 0; y < tiles_static.extent(0); ++y) {
+      for (std::size_t x = 0; x < tiles_static.extent(1); ++x) {
+        auto tyx_s = tiles_static(y, x);
+        auto tyx_d = tiles_dynamic(y, x);
+        EXPECT_EQ(&tyx_s(0, 0), &tyx_d(0, 0));
+      }
+    }
   }
 }

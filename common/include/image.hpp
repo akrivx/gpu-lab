@@ -75,9 +75,9 @@ namespace gpu_lab {
     std::size_t size_bytes() const noexcept { return height_ * pitch_bytes(); }
     bool empty() const noexcept { return handle_ == nullptr; }
 
-    view_type view() noexcept { return image_view(data(), pitch_, height_, width_); }
-    const_view_type view() const noexcept { return image_view(data(), pitch_, height_, width_); }
-    const_view_type cview() const noexcept { return image_view(data(), pitch_, height_, width_); }
+    view_type view() noexcept { return image_view<Loc>(data(), pitch_, height_, width_); }
+    const_view_type view() const noexcept { return image_view<Loc>(data(), pitch_, height_, width_); }
+    const_view_type cview() const noexcept { return image_view<Loc>(data(), pitch_, height_, width_); }
     
   private:
     std::size_t height_ = {};
@@ -167,4 +167,13 @@ namespace gpu_lab {
   {
     return detail::make_tiled_image_view(img, tile_height, tile_width);
   }
+
+  template<PitchedElement T>
+  using HostImage = Image<T, MemoryLocation::Host>;
+
+  template<PitchedElement T>
+  using HostPinnedImage = Image<T, MemoryLocation::HostPinned>;
+
+  template<PitchedElement T>
+  using DeviceImage = Image<T, MemoryLocation::Device>;
 } // namespace gpu_lab

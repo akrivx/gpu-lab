@@ -14,10 +14,7 @@
 
 namespace gpu_lab {
   namespace detail {
-    template<
-      typename T,
-      MemoryLocation Loc,
-      typename TileExtents = DynamicImageViewExtents>
+    template<typename T, MemoryLocation Loc, typename TileExtents>
     struct TileAccessor {
       using tile_view_type   = ImageView<T, Loc, TileExtents>;
       using element_type     = tile_view_type;
@@ -53,7 +50,7 @@ namespace gpu_lab {
       __host__ __device__
       constexpr data_handle_type offset(data_handle_type p, index_type i) const noexcept
       {
-        return ImageAccessor<T, Loc>{}.offset(p, i);
+        return p + i;
       }
     };
 
@@ -70,12 +67,16 @@ namespace gpu_lab {
         if constexpr (H != cuda::std::dynamic_extent) {
           return H;                      // static height
         }
-        return extents.extent(0);        // dynamic height
+        else {
+          return extents.extent(0);        // dynamic height
+        }
       } else {
         if constexpr (W != cuda::std::dynamic_extent) {
           return W;                      // static width
         }
-        return extents.extent(1);        // dynamic width
+        else {
+          return extents.extent(1);        // dynamic width
+        }
       }
     }
 
@@ -84,8 +85,8 @@ namespace gpu_lab {
       DynamicImageViewExtents        image,
       ImageViewExtents<TileH, TileW> tile)
     {
-      assert(image.extent(0) % get_extent<0>(tile));
-      assert(image.extent(1) % get_extent<1>(tile));
+      assert((image.extent(0) % get_extent<0>(tile)) == 0);
+      assert((image.extent(1) % get_extent<1>(tile)) == 0);
 
       const std::size_t grid_h = image.extent(0) / get_extent<0>(tile);
       const std::size_t grid_w = image.extent(1) / get_extent<1>(tile);
@@ -150,7 +151,7 @@ namespace gpu_lab {
     const DynamicImageViewExtents&        image_extents,
     const ImageViewExtents<TileH, TileW>& tile_extents = {})
   {
-    return tiled_image_view(
+    return tiled_image_view<Loc>(
       data,
       {image_pitch, 1},
       image_extents,
@@ -169,7 +170,7 @@ namespace gpu_lab {
     std::size_t                           image_width,
     const ImageViewExtents<TileH, TileW>& tile_extents = {})
   {
-    return tiled_image_view(
+    return tiled_image_view<Loc>(
       data,
       {image_pitch, 1},
       {image_height, image_width},
@@ -185,7 +186,7 @@ namespace gpu_lab {
     ImageView<T, Loc>                     v,
     const ImageViewExtents<TileH, TileW>& tile_extents = {})
   {
-    return tiled_image_view(
+    return tiled_image_view<Loc>(
       &v(0, 0),
       {v.stride(0), v.stride(1)},
       v.extents(),

@@ -55,7 +55,7 @@ namespace gpu_lab {
     const ImageViewExtents<H, W>&           extents = {})
   {
     auto mapping = cuda::std::layout_stride::mapping(extents, strides);
-    return ImageView<T, Loc>{data, mapping};
+    return ImageView<T, Loc, ImageViewExtents<H, W>>{data, mapping};
   }
 
   template<
