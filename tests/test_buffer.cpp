@@ -1,6 +1,7 @@
 #include <cstdint>
-#include <vector>
 #include <type_traits>
+#include <vector>
+
 
 #include <gtest/gtest.h>
 
@@ -32,8 +33,7 @@ static_assert(std::is_same_v<DeviceBufferView<const int>::value_type, int>);
 
 // ------------ BufferView tests ------------
 
-TEST(BufferView, BasicPropertiesAndIndexing)
-{
+TEST(BufferView, BasicPropertiesAndIndexing) {
   int data[4] = {1, 2, 3, 4};
   HostBufferView v{data, 4};
 
@@ -50,16 +50,14 @@ TEST(BufferView, BasicPropertiesAndIndexing)
   EXPECT_EQ(data[2], 42);
 }
 
-TEST(BufferView, EmptyView)
-{
+TEST(BufferView, EmptyView) {
   HostBufferView<int> v{nullptr, 0};
   EXPECT_EQ(v.data(), nullptr);
   EXPECT_EQ(v.size(), 0u);
   EXPECT_TRUE(v.empty());
 }
 
-TEST(BufferView, SubviewFirstLast)
-{
+TEST(BufferView, SubviewFirstLast) {
   int data[5] = {10, 20, 30, 40, 50};
   HostBufferView v{data, 5};
 
@@ -84,35 +82,27 @@ TEST(BufferView, SubviewFirstLast)
   EXPECT_EQ(last_three[2], 50);
 }
 
-TEST(BufferView, AsConst)
-{
+TEST(BufferView, AsConst) {
   int data[3] = {7, 8, 9};
   HostBufferView v{data, 3};
 
   auto cv = as_const(v);
 
-  static_assert(std::is_same_v<
-    decltype(cv),
-    HostBufferView<const int>
-  >);
+  static_assert(std::is_same_v<decltype(cv), HostBufferView<const int>>);
 
   EXPECT_EQ(cv.size(), 3u);
   EXPECT_EQ(cv.data(), data);
   EXPECT_EQ(cv[0], 7);
 }
 
-TEST(BufferView, RebindViewToSmallerElementType)
-{
+TEST(BufferView, RebindViewToSmallerElementType) {
   uint32_t data[4] = {0x11223344u, 0, 0, 0};
   HostBufferView v{data, 4};
 
   // Rebind to bytes: 4 * 4 = 16 bytes
   auto bytes = view_cast<std::uint8_t>(v);
 
-  static_assert(std::is_same_v<
-    decltype(bytes),
-    HostBufferView<std::uint8_t>
-  >);
+  static_assert(std::is_same_v<decltype(bytes), HostBufferView<std::uint8_t>>);
 
   EXPECT_EQ(bytes.size(), 16u);
   EXPECT_EQ(bytes.data(), reinterpret_cast<std::uint8_t*>(data));
@@ -125,8 +115,7 @@ TEST(BufferView, RebindViewToSmallerElementType)
   }
 }
 
-TEST(BufferView, Copy)
-{
+TEST(BufferView, Copy) {
   const int src_data[5] = {10, 20, 30, 40, 50};
   int dst_data[5] = {-1, -1, -1, -1, -1};
 
@@ -142,8 +131,7 @@ TEST(BufferView, Copy)
 
 // ---------- Buffer (host-pageable) basic tests ----------
 
-TEST(Buffer, DefaultConstructedIsEmpty)
-{
+TEST(Buffer, DefaultConstructedIsEmpty) {
   HostBuffer<int> buf;
   EXPECT_EQ(buf.data(), nullptr);
   EXPECT_EQ(buf.size(), 0u);
@@ -153,8 +141,7 @@ TEST(Buffer, DefaultConstructedIsEmpty)
   EXPECT_EQ(buf.size(), 0u);
 }
 
-TEST(Buffer, SizedConstructAllocates)
-{
+TEST(Buffer, SizedConstructAllocates) {
   constexpr size_t N = 16;
   HostBuffer<int> buf{N};
 
@@ -166,8 +153,7 @@ TEST(Buffer, SizedConstructAllocates)
   EXPECT_EQ(buf.size(), buf.size());
 }
 
-TEST(Buffer, MoveConstructorTransfersOwnership)
-{
+TEST(Buffer, MoveConstructorTransfersOwnership) {
   constexpr size_t N = 8;
 
   HostBuffer<int> a{N};
@@ -188,8 +174,7 @@ TEST(Buffer, MoveConstructorTransfersOwnership)
   }
 }
 
-TEST(Buffer, MoveAssignmentTransfersOwnership)
-{
+TEST(Buffer, MoveAssignmentTransfersOwnership) {
   constexpr size_t N = 8;
   constexpr size_t M = 4;
 
@@ -212,8 +197,7 @@ TEST(Buffer, MoveAssignmentTransfersOwnership)
   }
 }
 
-TEST(Buffer, ReleaseResetsBufferAndReturnsHandle)
-{
+TEST(Buffer, ReleaseResetsBufferAndReturnsHandle) {
   constexpr size_t N = 10;
   HostBuffer<int> buf{N};
   int* raw_before = buf.data();
@@ -230,39 +214,25 @@ TEST(Buffer, ReleaseResetsBufferAndReturnsHandle)
 
 // ---------- Buffer view/cview tests ----------
 
-TEST(Buffer, ViewAndCViewTypes)
-{
+TEST(Buffer, ViewAndCViewTypes) {
   HostBuffer<int> buf{4};
 
   auto v = buf.view();
-  static_assert(std::is_same_v<
-    decltype(v),
-    HostBufferView<int>
-  >);
+  static_assert(std::is_same_v<decltype(v), HostBufferView<int>>);
 
   const auto& cbuf = buf;
   auto cv = cbuf.view();
-  static_assert(std::is_same_v<
-    decltype(cv),
-    HostBufferView<const int>
-  >);
+  static_assert(std::is_same_v<decltype(cv), HostBufferView<const int>>);
 
   auto cv2 = buf.cview();
-  static_assert(std::is_same_v<
-    decltype(cv2),
-    HostBufferView<const int>
-  >);
+  static_assert(std::is_same_v<decltype(cv2), HostBufferView<const int>>);
 }
 
-TEST(Buffer, ViewAsRebindsElementType)
-{
+TEST(Buffer, ViewAsRebindsElementType) {
   HostBuffer<std::uint32_t> buf{4};
   auto bv = view_as<std::uint8_t>(buf);
 
-  static_assert(std::is_same_v<
-    decltype(bv),
-    HostBufferView<std::uint8_t>
-  >);
+  static_assert(std::is_same_v<decltype(bv), HostBufferView<std::uint8_t>>);
 
   EXPECT_EQ(bv.size(), buf.size() * sizeof(std::uint32_t));
   EXPECT_EQ(bv.data(), reinterpret_cast<std::uint8_t*>(buf.data()));
@@ -270,8 +240,7 @@ TEST(Buffer, ViewAsRebindsElementType)
 
 // ---------- Copy & clone tests ----------
 
-TEST(BufferCopy, SizeMismatchThrows)
-{
+TEST(BufferCopy, SizeMismatchThrows) {
   constexpr size_t N = 16;
   constexpr size_t M = 8;
 
@@ -282,8 +251,7 @@ TEST(BufferCopy, SizeMismatchThrows)
   EXPECT_THROW(copy(big, small), std::runtime_error);
 }
 
-TEST(BufferCopy, HostToHostCopy)
-{
+TEST(BufferCopy, HostToHostCopy) {
   constexpr size_t N = 32;
   HostBuffer<int> src{N};
   HostBuffer<int> dst{N};
@@ -300,8 +268,7 @@ TEST(BufferCopy, HostToHostCopy)
   }
 }
 
-TEST(BufferCopy, HostToDeviceAndBack)
-{
+TEST(BufferCopy, HostToDeviceAndBack) {
   constexpr size_t N = 64;
 
   HostBuffer<int> h_src{N};
@@ -321,8 +288,7 @@ TEST(BufferCopy, HostToDeviceAndBack)
   }
 }
 
-TEST(BufferCopyAsync, HostToDeviceAndBackDefaultStream)
-{
+TEST(BufferCopyAsync, HostToDeviceAndBackDefaultStream) {
   constexpr size_t N = 64;
 
   HostPinnedBuffer<int> h_src{N};
@@ -346,8 +312,7 @@ TEST(BufferCopyAsync, HostToDeviceAndBackDefaultStream)
   }
 }
 
-TEST(BufferCopy, DeviceToHostCopy)
-{
+TEST(BufferCopy, DeviceToHostCopy) {
   constexpr size_t N = 64;
 
   // Initialise host source
@@ -373,8 +338,7 @@ TEST(BufferCopy, DeviceToHostCopy)
   }
 }
 
-TEST(BufferCopy, DeviceToDeviceCopy)
-{
+TEST(BufferCopy, DeviceToDeviceCopy) {
   constexpr size_t N = 128;
 
   HostBuffer<int> h_src{N};
@@ -406,8 +370,7 @@ TEST(BufferCopy, DeviceToDeviceCopy)
   }
 }
 
-TEST(BufferCopyAsync, DeviceToHost)
-{
+TEST(BufferCopyAsync, DeviceToHost) {
   constexpr size_t N = 64;
 
   HostPinnedBuffer<int> h_src{N};
@@ -436,8 +399,7 @@ TEST(BufferCopyAsync, DeviceToHost)
   }
 }
 
-TEST(BufferCopyAsync, DeviceToDevice)
-{
+TEST(BufferCopyAsync, DeviceToDevice) {
   constexpr size_t N = 128;
 
   HostPinnedBuffer<int> h_src{N};

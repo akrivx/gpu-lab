@@ -2,11 +2,12 @@
 
 #include <gtest/gtest.h>
 
+#include "gpu_lab_config.hpp" // generated in the build dir
 #include "image.hpp"
 #include "image_view.hpp"
-#include "tiled_image_view.hpp"
 #include "memory_location.hpp"
-#include "gpu_lab_config.hpp"  // generated in the build dir
+#include "tiled_image_view.hpp"
+
 
 using namespace gpu_lab;
 
@@ -15,7 +16,6 @@ using namespace gpu_lab;
 static_assert(HostImageView<int>::accessor_type::location() == MemoryLocation::Host);
 static_assert(HostPinnedImageView<int>::accessor_type::location() == MemoryLocation::HostPinned);
 static_assert(DeviceImageView<int>::accessor_type::location() == MemoryLocation::Device);
-
 
 // ------------ ImageView tests ------------
 
@@ -33,13 +33,10 @@ struct TestRawImage {
     }
   }
 
-  auto view_5x4() {
-    return image_view<MemoryLocation::Host>(&data[0][0], STRIDE, 5, 4);
-  }
+  auto view_5x4() { return image_view<MemoryLocation::Host>(&data[0][0], STRIDE, 5, 4); }
 };
 
-TEST(ImageView, BasicPropertiesAndIndexing)
-{
+TEST(ImageView, BasicPropertiesAndIndexing) {
   TestRawImage raw;
 
   auto img_5x4 = raw.view_5x4();
@@ -59,12 +56,11 @@ TEST(ImageView, BasicPropertiesAndIndexing)
   }
 }
 
-TEST(ImageView, Subcols)
-{
+TEST(ImageView, Subcols) {
   TestRawImage raw;
 
   auto img_5x4 = raw.view_5x4();
-  
+
   auto left_5x2 = subcols(img_5x4, {0, 2});
   for (std::size_t y = 0; y < left_5x2.extent(0); ++y) {
     for (std::size_t x = 0; x < left_5x2.extent(1); ++x) {
@@ -87,12 +83,11 @@ TEST(ImageView, Subcols)
   }
 }
 
-TEST(ImageView, Subrows)
-{
+TEST(ImageView, Subrows) {
   TestRawImage raw;
 
   auto img_5x4 = raw.view_5x4();
-  
+
   auto top_2x4 = subrows(img_5x4, {0, 2});
   for (std::size_t y = 0; y < top_2x4.extent(0); ++y) {
     for (std::size_t x = 0; x < top_2x4.extent(1); ++x) {
@@ -115,12 +110,11 @@ TEST(ImageView, Subrows)
   }
 }
 
-TEST(ImageView, Subviews)
-{
+TEST(ImageView, Subviews) {
   TestRawImage raw;
 
   auto img_5x4 = raw.view_5x4();
-  
+
   // Top-left 3x3
   auto tl_3x3 = subview(img_5x4, {0, 3}, {0, 3});
   for (std::size_t y = 0; y < tl_3x3.extent(0); ++y) {
@@ -162,17 +156,13 @@ TEST(ImageView, Subviews)
   }
 }
 
-TEST(ImageView, AsConst)
-{
+TEST(ImageView, AsConst) {
   TestRawImage raw;
 
   auto img_5x4 = raw.view_5x4();
   auto const_img_5x4 = as_const(img_5x4);
 
-  static_assert(std::is_same_v<
-    decltype(const_img_5x4),
-    HostImageView<const int>
-  >);
+  static_assert(std::is_same_v<decltype(const_img_5x4), HostImageView<const int>>);
 
   EXPECT_EQ(img_5x4.data_handle(), const_img_5x4.data_handle());
   for (int i = 0; i < 2; ++i) {
@@ -181,19 +171,25 @@ TEST(ImageView, AsConst)
   }
 }
 
-
 // ------------ PitchedElement compile-time tests ------------
 
 namespace {
-  static_assert(gpu_lab::cuda_pitch_alignment != 0,
-               "cuda_pitch_alignment must be non-zero");
+  static_assert(gpu_lab::cuda_pitch_alignment != 0, "cuda_pitch_alignment must be non-zero");
 
   // helper types
-  struct Size3 { std::uint8_t v[3]; };   // sizeof == 3
-  struct Size5 { std::uint8_t v[5]; };   // sizeof == 5
-  struct SizeMax { std::uint8_t v[gpu_lab::cuda_pitch_alignment]; };
+  struct Size3 {
+    std::uint8_t v[3];
+  }; // sizeof == 3
+  struct Size5 {
+    std::uint8_t v[5];
+  }; // sizeof == 5
+  struct SizeMax {
+    std::uint8_t v[gpu_lab::cuda_pitch_alignment];
+  };
 
-  struct PixelRGBA { std::uint8_t r, g, b, a; };
+  struct PixelRGBA {
+    std::uint8_t r, g, b, a;
+  };
   static_assert(sizeof(PixelRGBA) == 4);
 
   // Non-trivially copyable:
@@ -201,7 +197,7 @@ namespace {
     NonTrivial(const NonTrivial&) {}
     int x;
   };
-  
+
   // --- Positive cases ---
   static_assert(PitchedElement<std::uint8_t>);
   static_assert(PitchedElement<std::uint16_t>);
@@ -209,18 +205,16 @@ namespace {
   static_assert(PitchedElement<float>);
   static_assert(PitchedElement<SizeMax>);
   static_assert(PitchedElement<PixelRGBA>);
-  
-  // --- Negative cases ---
-  static_assert(!PitchedElement<Size3>);  // sizeof == 3, won't divide a power-of-two
-  static_assert(!PitchedElement<Size5>);  // sizeof == 5
-  static_assert(!PitchedElement<NonTrivial>);
-} // namespace (anonymous)
 
+  // --- Negative cases ---
+  static_assert(!PitchedElement<Size3>); // sizeof == 3, won't divide a power-of-two
+  static_assert(!PitchedElement<Size5>); // sizeof == 5
+  static_assert(!PitchedElement<NonTrivial>);
+} // namespace
 
 // ------------ TiledImageView tests ------------
 
-TEST(TiledImageView, BasicPropertiesAndIndexing)
-{
+TEST(TiledImageView, BasicPropertiesAndIndexing) {
   constexpr std::size_t H = 50;
   constexpr std::size_t W = 200;
 
@@ -228,7 +222,7 @@ TEST(TiledImageView, BasicPropertiesAndIndexing)
   constexpr std::size_t TILE_W = 50;
 
   HostImage<int> img{H, W};
-  
+
   {
     auto tiles_static = tiled_image_view<TILE_H, TILE_W>(img);
     auto tiles_dynamic = tiled_image_view(img, TILE_H, TILE_W);

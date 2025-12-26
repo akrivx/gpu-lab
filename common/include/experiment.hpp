@@ -1,10 +1,10 @@
 #pragma once
 
-#include <iosfwd>
 #include <cstddef>
+#include <functional>
+#include <iosfwd>
 #include <string>
 #include <utility>
-#include <functional>
 
 namespace gpu_lab {
   struct ExperimentResult {
@@ -20,16 +20,15 @@ namespace gpu_lab {
   // A function that returns a (min_ms, max_ms, avg_ms) tuple.
   using TimedExperimentFunc = std::function<std::tuple<float, float, float>()>;
 
-  std::vector<ExperimentResult> run_bandwidth_experiments(
-    const std::vector<std::pair<std::string, TimedExperimentFunc>>& funcs,
-    std::size_t bytes_moved);
+  using NamedTimedExperimentFuncs = std::vector<std::pair<std::string, TimedExperimentFunc>>;
 
-  inline void run_bandwidth_experiments(
-    const std::vector<std::pair<std::string, TimedExperimentFunc>>& funcs,
-    std::size_t bytes_moved,
-    std::ostream& out)
-  {
+  std::vector<ExperimentResult> run_bandwidth_experiments(const NamedTimedExperimentFuncs& funcs,
+                                                          std::size_t bytes_moved);
+
+  inline void run_bandwidth_experiments(const NamedTimedExperimentFuncs& funcs,
+                                        std::size_t bytes_moved,
+                                        std::ostream& out) {
     const auto results = run_bandwidth_experiments(funcs, bytes_moved);
     print_bandwidth_table(results, out);
   }
-}
+} // namespace gpu_lab

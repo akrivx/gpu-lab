@@ -10,9 +10,7 @@ namespace gpu_lab {
   namespace detail {
     struct StreamDeleter {
       using pointer = cudaStream_t;
-      void operator()(cudaStream_t s) const noexcept {
-        cudaStreamDestroy(s);
-      }
+      void operator()(cudaStream_t s) const noexcept { cudaStreamDestroy(s); }
     };
 
     using UniqueStream = std::unique_ptr<cudaStream_t, detail::StreamDeleter>;
@@ -27,19 +25,15 @@ namespace gpu_lab {
   class ScopedStream {
   public:
     explicit ScopedStream(unsigned int flags = cudaStreamDefault)
-      : stream_{detail::make_unique_stream(flags)} {}
+        : stream_{detail::make_unique_stream(flags)} {}
 
-    void sync() const {
-      CUDA_CHECK(cudaStreamSynchronize(stream_.get()));
-    }
+    void sync() const { CUDA_CHECK(cudaStreamSynchronize(stream_.get())); }
 
     void wait_event(cudaEvent_t event, unsigned int flags = cudaEventWaitDefault) const {
       CUDA_CHECK(cudaStreamWaitEvent(get(), event, flags));
     }
 
-    cudaStream_t get() const {
-      return stream_.get();
-    }
+    cudaStream_t get() const { return stream_.get(); }
 
   private:
     detail::UniqueStream stream_;

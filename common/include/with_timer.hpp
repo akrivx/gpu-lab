@@ -1,10 +1,10 @@
 #pragma once
 
 #include <algorithm>
-#include <stdexcept>
-#include <utility>
 #include <limits>
+#include <stdexcept>
 #include <tuple>
+#include <utility>
 
 #include <cuda_runtime.h>
 
@@ -12,7 +12,7 @@
 
 namespace gpu_lab {
   /// @brief Measures the GPU execution time of a callable using CUDA events.
-  /// 
+  ///
   /// This helper records a start and stop CUDA event around the invocation of
   /// the provided callable. The callable must accept a single parameter of type
   /// `cudaStream_t` and enqueue all work onto that stream. The function waits
@@ -30,7 +30,7 @@ namespace gpu_lab {
   /// @param f The function whose GPU execution time is to be measured
   /// @param stream The CUDA stream on which the callable will be invoked
   /// @return Elapsed GPU time in milliseconds
-  template<typename F>
+  template <typename F>
   auto with_timer(F&& f, cudaStream_t stream = cudaStreamDefault) {
     ScopedEvent start;
     ScopedEvent stop;
@@ -62,13 +62,11 @@ namespace gpu_lab {
   ///   - `min_ms`: minimum elapsed GPU time over all timed runs
   ///   - `max_ms`: maximum elapsed GPU time over all timed runs
   ///   - `avg_ms`: average elapsed GPU time over all timed runs
-  template<typename F>
-  auto run_benchmark(
-    F f,
-    cudaStream_t stream = cudaStreamDefault,
-    int num_iter = 50,
-    int num_warmup_iter = 10
-  ) {
+  template <typename F>
+  auto run_benchmark(F f,
+                     cudaStream_t stream = cudaStreamDefault,
+                     int num_iter = 50,
+                     int num_warmup_iter = 10) {
     if (num_iter <= 0) {
       throw std::invalid_argument{"run_benchmark: num_iter must be > 0"};
     }
@@ -81,8 +79,8 @@ namespace gpu_lab {
       CUDA_CHECK(cudaStreamSynchronize(stream));
     }
 
-    float min_ms   = std::numeric_limits<float>::max();
-    float max_ms   = 0.0f;
+    float min_ms = std::numeric_limits<float>::max();
+    float max_ms = 0.0f;
     float total_ms = 0.0f;
 
     for (int i = 0; i < num_iter; ++i) {

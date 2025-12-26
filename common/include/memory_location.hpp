@@ -3,26 +3,19 @@
 #include <cuda_runtime.h>
 
 namespace gpu_lab {
-  enum class MemoryLocation {
-    Host,
-    HostPinned,
-    Device
-  };
+  enum class MemoryLocation { Host, HostPinned, Device };
 
-  template<MemoryLocation SrcLoc, MemoryLocation DstLoc>
+  template <MemoryLocation SrcLoc, MemoryLocation DstLoc>
   constexpr cudaMemcpyKind get_memcpy_kind() {
     if constexpr (SrcLoc == MemoryLocation::Device) {
       if constexpr (DstLoc == MemoryLocation::Device) {
         return cudaMemcpyDeviceToDevice;
-      }
-      else {
+      } else {
         return cudaMemcpyDeviceToHost;
       }
-    }
-    else if constexpr (DstLoc == MemoryLocation::Device) {
+    } else if constexpr (DstLoc == MemoryLocation::Device) {
       return cudaMemcpyHostToDevice;
-    }
-    else {
+    } else {
       return cudaMemcpyHostToHost;
     }
   }

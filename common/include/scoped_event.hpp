@@ -10,9 +10,7 @@ namespace gpu_lab {
   namespace detail {
     struct EventDeleter {
       using pointer = cudaEvent_t;
-      void operator()(cudaEvent_t e) const noexcept {
-        cudaEventDestroy(e);
-      }
+      void operator()(cudaEvent_t e) const noexcept { cudaEventDestroy(e); }
     };
 
     using UniqueEvent = std::unique_ptr<cudaEvent_t, detail::EventDeleter>;
@@ -27,15 +25,13 @@ namespace gpu_lab {
   class ScopedEvent {
   public:
     explicit ScopedEvent(unsigned int flags = cudaEventDefault)
-      : ev_{detail::make_unique_event(flags)} {}
+        : ev_{detail::make_unique_event(flags)} {}
 
     void record(cudaStream_t stream = cudaStreamDefault) const {
       CUDA_CHECK(cudaEventRecord(ev_.get(), stream));
     }
 
-    void sync() const {
-      CUDA_CHECK(cudaEventSynchronize(ev_.get()));
-    }
+    void sync() const { CUDA_CHECK(cudaEventSynchronize(ev_.get())); }
 
     float elapsed_time_from(const ScopedEvent& start) const {
       float ms = {};
@@ -43,9 +39,7 @@ namespace gpu_lab {
       return ms;
     }
 
-    cudaEvent_t get() const {
-      return ev_.get();
-    }
+    cudaEvent_t get() const { return ev_.get(); }
 
   private:
     detail::UniqueEvent ev_;
