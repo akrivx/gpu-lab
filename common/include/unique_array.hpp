@@ -12,11 +12,13 @@
 namespace gpu_lab {
   namespace detail {
     struct HostPinnedArrayDeleter {
-      void operator()(void* host_ptr) const noexcept { cudaFreeHost(host_ptr); }
+      void operator()(void* host_ptr) const noexcept {
+        CUDA_CHECK_TERMINATE(cudaFreeHost(host_ptr));
+      }
     };
 
     struct DeviceArrayDeleter {
-      void operator()(void* dev_ptr) const noexcept { cudaFree(dev_ptr); }
+      void operator()(void* dev_ptr) const noexcept { CUDA_CHECK_TERMINATE(cudaFree(dev_ptr)); }
     };
   } // namespace detail
 
@@ -43,15 +45,14 @@ namespace gpu_lab {
     if constexpr (Loc == MemoryLocation::Host) {
       return UniqueHostPageableArray<T>{std::make_unique_for_overwrite<T[]>(count)};
     } else if constexpr (Loc == MemoryLocation::HostPinned) {
-      T* HostPinned_ptr = {};
-      CUDA_CHECK(cudaMallocHost(reinterpret_cast<void**>(&HostPinned_ptr), count * sizeof(T)));
-      return UniqueHostPinnedArray<T>{HostPinned_ptr};
-    } else // MemoryLocation::Device
-    {
+      void* ptr = nullptr;
+      CUDA_CHECK(cudaMallocHost(&ptr, count * sizeof(T)));
+      return UniqueHostPinnedArray<T>{static_cast<T*>(ptr)};
+    } else {
       static_assert(Loc == MemoryLocation::Device);
-      T* dev_ptr = {};
-      CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&dev_ptr), count * sizeof(T)));
-      return UniqueDeviceArray<T>{dev_ptr};
+      void* ptr = nullptr;
+      CUDA_CHECK(cudaMalloc(&ptr, count * sizeof(T)));
+      return UniqueDeviceArray<T>{static_cast<T*>(ptr)};
     }
   }
 
