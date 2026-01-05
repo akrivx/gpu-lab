@@ -197,21 +197,6 @@ TEST(Buffer, MoveAssignmentTransfersOwnership) {
   }
 }
 
-TEST(Buffer, ReleaseResetsBufferAndReturnsHandle) {
-  constexpr size_t N = 10;
-  HostBuffer<int> buf{N};
-  int* raw_before = buf.data();
-
-  auto handle = buf.release();
-
-  EXPECT_EQ(buf.data(), nullptr);
-  EXPECT_EQ(buf.size(), 0u);
-  EXPECT_TRUE(buf.empty());
-
-  EXPECT_NE(handle.get(), nullptr);
-  EXPECT_EQ(handle.get(), raw_before);
-}
-
 // ---------- Buffer view/cview tests ----------
 
 TEST(Buffer, ViewAndCViewTypes) {

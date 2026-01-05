@@ -6,20 +6,22 @@
 
 #include <cuda_runtime.h>
 
+#include "buffer_storage.hpp"
 #include "buffer_view.hpp"
 #include "memory_location.hpp"
-#include "unique_array.hpp"
+#include "memory_resource.hpp"
 
 namespace gpu_lab {
   template <typename T, MemoryLocation Loc>
   class [[nodiscard]] Buffer {
+    using resource_type = detail::DefaultMemoryResource<Loc>;
+
   public:
-    using handle_type = UniqueArray<T, Loc>;
     using element_type = T;
     using view_type = BufferView<T, Loc>;
     using const_view_type = BufferView<const T, Loc>;
 
-    static constexpr MemoryLocation location() { return Loc; }
+    static constexpr MemoryLocation location = Loc;
 
     Buffer() noexcept = default;
 
@@ -27,32 +29,33 @@ namespace gpu_lab {
     Buffer& operator=(const Buffer&) = delete;
 
     explicit Buffer(std::size_t count)
-        : handle_{make_unique_array<T, Loc>(count)}
+        : storage_{count * sizeof(T), alignof(T)}
         , size_{count} {}
 
     Buffer(Buffer&& o) noexcept
-        : handle_{std::exchange(o.handle_, {})}
-        , size_{std::exchange(o.size_, {})} {}
+        : storage_{std::exchange(o.storage_, {})}
+        , size_{std::exchange(o.size_, 0)} {}
 
     Buffer& operator=(Buffer&& o) noexcept {
       if (this != &o) {
-        handle_ = std::exchange(o.handle_, {});
-        size_ = std::exchange(o.size_, {});
+        storage_ = std::exchange(o.storage_, {});
+        size_ = std::exchange(o.size_, 0);
       }
       return *this;
     }
 
-    handle_type release() noexcept {
-      size_ = {};
-      return std::exchange(handle_, {});
+    element_type* data() noexcept { return static_cast<element_type*>(storage_.data()); }
+
+    const element_type* data() const noexcept {
+      return static_cast<const element_type*>(storage_.data());
     }
 
-    element_type* data() noexcept { return handle_.get(); }
-    const element_type* data() const noexcept { return handle_.get(); }
-    const element_type* cdata() const noexcept { return handle_.get(); }
+    const element_type* cdata() const noexcept {
+      return static_cast<const element_type*>(storage_.data());
+    }
 
     std::size_t size() const noexcept { return size_; }
-    std::size_t size_bytes() const noexcept { return size_ * sizeof(element_type); }
+    std::size_t size_bytes() const noexcept { return storage_.size_bytes(); }
     bool empty() const noexcept { return size_ == 0; }
 
     view_type view() noexcept { return {data(), size()}; }
@@ -60,8 +63,8 @@ namespace gpu_lab {
     const_view_type cview() const noexcept { return as_const(view()); }
 
   private:
-    handle_type handle_ = {};
-    std::size_t size_ = {};
+    detail::BufferStorage<resource_type> storage_ = {};
+    std::size_t size_ = 0;
   };
 
   template <typename To, typename From, MemoryLocation Loc>
