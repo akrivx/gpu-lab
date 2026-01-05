@@ -1,83 +1,55 @@
 #pragma once
 
 #include <cstddef>
-#include <new>
-#include <type_traits>
 
-#include <cuda_runtime.h>
-
-#include "cuda_check.hpp"
 #include "memory_location.hpp"
 
 namespace gpu_lab::detail {
+  struct StridedBytes {
+    void* ptr = nullptr;
+    std::size_t stride_bytes = 0;
+  };
+
   struct HostMemoryResource {
     static constexpr MemoryLocation location = MemoryLocation::Host;
 
-    static void* allocate_bytes(std::size_t nbytes, std::size_t alignment) {
-      if (nbytes == 0) {
-        return nullptr;
-      } else if (alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
-        return ::operator new(nbytes);
-      } else {
-        return ::operator new(nbytes, std::align_val_t(alignment));
-      }
-    }
+    static void* allocate_bytes(std::size_t nbytes, std::size_t alignment);
+
+    static StridedBytes allocate_strided_bytes(std::size_t block_bytes,
+                                               std::size_t block_count,
+                                               std::size_t block_alignment);
 
     static void deallocate_bytes(void* ptr,
                                  [[maybe_unused]] std::size_t nbytes,
-                                 std::size_t alignment) noexcept {
-      if (!ptr) {
-        return;
-      } else if (alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
-        ::operator delete(ptr);
-      } else {
-        ::operator delete(ptr, std::align_val_t(alignment));
-      }
-    }
+                                 std::size_t alignment) noexcept;
   };
 
   struct HostPinnedMemoryResource {
     static constexpr MemoryLocation location = MemoryLocation::HostPinned;
 
-    static void* allocate_bytes(std::size_t nbytes, [[maybe_unused]] std::size_t alignment) {
-      if (nbytes == 0) {
-        return nullptr;
-      }
+    static void* allocate_bytes(std::size_t nbytes, [[maybe_unused]] std::size_t alignment);
 
-      void* ptr = nullptr;
-      CUDA_CHECK(cudaMallocHost(&ptr, nbytes));
-      return ptr;
-    }
+    static StridedBytes allocate_strided_bytes(std::size_t block_bytes,
+                                               std::size_t block_count,
+                                               std::size_t block_alignment);
 
     static void deallocate_bytes(void* ptr,
                                  [[maybe_unused]] std::size_t nbytes,
-                                 [[maybe_unused]] std::size_t alignment) noexcept {
-      if (ptr) {
-        CUDA_CHECK_TERMINATE(cudaFreeHost(ptr));
-      }
-    }
+                                 [[maybe_unused]] std::size_t alignment) noexcept;
   };
 
   struct DeviceMemoryResource {
     static constexpr MemoryLocation location = MemoryLocation::Device;
 
-    static void* allocate_bytes(std::size_t nbytes, [[maybe_unused]] std::size_t alignment) {
-      if (nbytes == 0) {
-        return nullptr;
-      }
+    static void* allocate_bytes(std::size_t nbytes, [[maybe_unused]] std::size_t alignment);
 
-      void* ptr = nullptr;
-      CUDA_CHECK(cudaMalloc(&ptr, nbytes));
-      return ptr;
-    }
+    static StridedBytes allocate_strided_bytes(std::size_t block_bytes,
+                                               std::size_t block_count,
+                                               std::size_t block_alignment);
 
     static void deallocate_bytes(void* ptr,
                                  [[maybe_unused]] std::size_t nbytes,
-                                 [[maybe_unused]] std::size_t alignment) noexcept {
-      if (ptr) {
-        CUDA_CHECK_TERMINATE(cudaFree(ptr));
-      }
-    }
+                                 [[maybe_unused]] std::size_t alignment) noexcept;
   };
 
   template <MemoryLocation Loc>

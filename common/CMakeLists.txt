@@ -1,5 +1,6 @@
 add_library(gpu_lab_common
   src/experiment.cpp
+  src/memory_resource.cpp
 )
 
 target_include_directories(gpu_lab_common
