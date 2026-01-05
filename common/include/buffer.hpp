@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include <cuda_runtime.h>
@@ -12,7 +13,10 @@
 #include "memory_resource.hpp"
 
 namespace gpu_lab {
-  template <typename T, MemoryLocation Loc>
+  template <typename T>
+  concept BufferElement = std::is_trivially_destructible_v<T> && std::is_trivially_copyable_v<T>;
+
+  template <BufferElement T, MemoryLocation Loc>
   class [[nodiscard]] Buffer {
     using resource_type = detail::DefaultMemoryResource<Loc>;
 
