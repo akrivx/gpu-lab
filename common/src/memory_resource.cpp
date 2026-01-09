@@ -1,4 +1,4 @@
-#include "gpu_lab/memory_resource.hpp"
+#include "gpu_lab/detail/memory_resource.hpp"
 
 #include <cassert>
 #include <cstddef>

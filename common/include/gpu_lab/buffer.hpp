@@ -8,13 +8,14 @@
 #include <cuda_runtime.h>
 
 #include "gpu_lab/buffer_view.hpp"
-#include "gpu_lab/byte_storage.hpp"
 #include "gpu_lab/memory_location.hpp"
-#include "gpu_lab/memory_resource.hpp"
+
+#include "gpu_lab/detail/byte_storage.hpp"
+#include "gpu_lab/detail/memory_resource.hpp"
 
 namespace gpu_lab {
   template <typename T>
-  concept BufferElement = std::is_trivially_destructible_v<T> && std::is_trivially_copyable_v<T>;
+  concept BufferElement = std::is_trivially_copyable_v<T>;
 
   template <BufferElement T, MemoryLocation Loc>
   class [[nodiscard]] Buffer {

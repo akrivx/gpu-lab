@@ -2,8 +2,8 @@
 
 #include <cstddef>
 
-#include "gpu_lab/memory_resource_concepts.hpp"
-#include "gpu_lab/strided_bytes.hpp"
+#include "gpu_lab/detail/memory_resource_concepts.hpp"
+#include "gpu_lab/detail/strided_bytes.hpp"
 
 namespace gpu_lab::detail {
   struct ByteAllocation {

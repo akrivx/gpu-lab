@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <utility>
 
-#include "gpu_lab/byte_storage_traits.hpp"
-#include "gpu_lab/memory_resource_concepts.hpp"
+#include "gpu_lab/detail/byte_storage_traits.hpp"
+#include "gpu_lab/detail/memory_resource_concepts.hpp"
 
 namespace gpu_lab::detail {
   template <typename Traits>
