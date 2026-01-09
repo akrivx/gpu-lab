@@ -3,13 +3,9 @@
 #include <cstddef>
 
 #include "memory_location.hpp"
+#include "strided_bytes.hpp"
 
 namespace gpu_lab::detail {
-  struct StridedBytes {
-    void* ptr = nullptr;
-    std::size_t stride_bytes = 0;
-  };
-
   struct HostMemoryResource {
     static constexpr MemoryLocation location = MemoryLocation::Host;
 
