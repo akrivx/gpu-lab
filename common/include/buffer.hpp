@@ -48,18 +48,18 @@ namespace gpu_lab {
       return *this;
     }
 
-    element_type* data() noexcept { return static_cast<element_type*>(storage_.allocation().ptr); }
+    element_type* data() noexcept { return static_cast<element_type*>(storage_.data()); }
 
     const element_type* data() const noexcept {
-      return static_cast<const element_type*>(storage_.allocation().ptr);
+      return static_cast<const element_type*>(storage_.data());
     }
 
     const element_type* cdata() const noexcept {
-      return static_cast<const element_type*>(storage_.allocation().ptr);
+      return static_cast<const element_type*>(storage_.data());
     }
 
     std::size_t size() const noexcept { return size_; }
-    std::size_t size_bytes() const noexcept { return storage_.allocation().size_bytes; }
+    std::size_t size_bytes() const noexcept { return storage_.size_bytes(); }
     bool empty() const noexcept { return size_ == 0; }
 
     view_type view() noexcept { return {data(), size()}; }

@@ -18,17 +18,20 @@ namespace gpu_lab::detail {
     std::size_t block_bytes = 0;
     std::size_t block_count = 0;
     std::size_t alignment = 0;
-
-    std::size_t total_bytes() const noexcept { return stride_bytes * block_count; }
   };
 
   template <ByteResource Resource>
   struct ByteStorageTraits {
     using allocation_type = ByteAllocation;
 
-    static void deallocate(const allocation_type& alloc) noexcept {
-      if (alloc.ptr) {
-        Resource::deallocate_bytes(alloc.ptr, alloc.size_bytes, alloc.alignment);
+    static inline constexpr bool is_strided = false;
+
+    static void* data(const allocation_type& a) noexcept { return a.ptr; }
+    static std::size_t size_bytes(const allocation_type& a) noexcept { return a.size_bytes; }
+
+    static void deallocate(const allocation_type& a) noexcept {
+      if (a.ptr) {
+        Resource::deallocate_bytes(a.ptr, a.size_bytes, a.alignment);
       }
     }
 
@@ -39,12 +42,23 @@ namespace gpu_lab::detail {
   };
 
   template <StridedByteResource Resource>
-  struct StridedBytesStorageTraits {
+  struct StridedByteStorageTraits {
     using allocation_type = StridedByteAllocation;
 
-    static void deallocate(const allocation_type& alloc) noexcept {
-      if (alloc.ptr) {
-        Resource::deallocate_bytes(alloc.ptr, alloc.total_bytes(), alloc.alignment);
+    static inline constexpr bool is_strided = true;
+
+    static void* data(const allocation_type& a) noexcept { return a.ptr; }
+    static std::size_t stride_bytes(const allocation_type& a) noexcept { return a.stride_bytes; }
+    static std::size_t block_bytes(const allocation_type& a) noexcept { return a.block_bytes; }
+    static std::size_t block_count(const allocation_type& a) noexcept { return a.block_count; }
+
+    static std::size_t size_bytes(const allocation_type& a) noexcept {
+      return a.block_bytes * a.block_count;
+    }
+
+    static void deallocate(const allocation_type& a) noexcept {
+      if (a.ptr) {
+        Resource::deallocate_bytes(a.ptr, size_bytes(a), a.alignment);
       }
     }
 

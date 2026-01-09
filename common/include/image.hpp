@@ -36,7 +36,7 @@ namespace gpu_lab {
     Image(std::size_t h, std::size_t w)
         : storage_{w * sizeof(T), h, alignof(T)}
         , width_{w}
-        , pitch_{storage_.allocation().stride_bytes / sizeof(T)} {
+        , pitch_{storage_.stride_bytes() / sizeof(T)} {
       assert((pitch_bytes() % sizeof(T)) == 0); // PitchedElement guarantees that
       assert((width_bytes() / sizeof(T)) == w);
     }
@@ -55,17 +55,17 @@ namespace gpu_lab {
       return *this;
     }
 
-    element_type* data() noexcept { return static_cast<T*>(storage_.allocation().ptr); }
-    const element_type* data() const noexcept { return static_cast<const T*>(storage_.allocation().ptr); }
-    const element_type* cdata() const noexcept { return static_cast<const T*>(storage_.allocation().ptr); }
+    element_type* data() noexcept { return static_cast<T*>(storage_.data()); }
+    const element_type* data() const noexcept { return static_cast<const T*>(storage_.data()); }
+    const element_type* cdata() const noexcept { return static_cast<const T*>(storage_.data()); }
 
     std::size_t width() const noexcept { return width_; }
-    std::size_t height() const noexcept { return storage_.allocation().block_count; }
+    std::size_t height() const noexcept { return storage_.block_count(); }
     std::size_t pitch() const noexcept { return pitch_; }
 
-    std::size_t width_bytes() const noexcept { return storage_.allocation().block_bytes; }
-    std::size_t pitch_bytes() const noexcept { return storage_.allocation().stride_bytes; }
-    std::size_t size_bytes() const noexcept { return storage_.allocation().total_bytes(); }
+    std::size_t width_bytes() const noexcept { return storage_.block_bytes(); }
+    std::size_t pitch_bytes() const noexcept { return storage_.stride_bytes(); }
+    std::size_t size_bytes() const noexcept { return storage_.size_bytes(); }
 
     bool empty() const noexcept { return size_bytes() == 0; }
 

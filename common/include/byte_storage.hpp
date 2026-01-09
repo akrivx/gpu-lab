@@ -9,9 +9,9 @@
 namespace gpu_lab::detail {
   template <typename Traits>
   class BasicByteStorage {
-  public:
     using allocation_type = typename Traits::allocation_type;
 
+  public:
     BasicByteStorage() noexcept = default;
 
     template <typename... Args>
@@ -33,7 +33,28 @@ namespace gpu_lab::detail {
       return *this;
     }
 
-    const allocation_type& allocation() const noexcept { return alloc_; }
+    const void* data() const noexcept { return alloc_.ptr; }
+    void* data() noexcept { return alloc_.ptr; }
+
+    std::size_t size_bytes() const noexcept { return Traits::size_bytes(alloc_); }
+
+    std::size_t stride_bytes() const noexcept
+      requires(Traits::is_strided)
+    {
+      return Traits::stride_bytes(alloc_);
+    }
+    
+    std::size_t block_bytes() const noexcept
+      requires(Traits::is_strided)
+    {
+      return Traits::block_bytes(alloc_);
+    }
+
+    std::size_t block_count() const noexcept
+      requires(Traits::is_strided)
+    {
+      return Traits::block_count(alloc_);
+    }
 
   private:
     void reset(allocation_type new_alloc = {}) noexcept {
@@ -49,5 +70,5 @@ namespace gpu_lab::detail {
   using ByteStorage = BasicByteStorage<ByteStorageTraits<Resource>>;
 
   template <StridedByteResource Resource>
-  using StridedByteStorage = BasicByteStorage<StridedBytesStorageTraits<Resource>>;
+  using StridedByteStorage = BasicByteStorage<StridedByteStorageTraits<Resource>>;
 } // namespace gpu_lab::detail
