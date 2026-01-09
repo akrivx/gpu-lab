@@ -1,5 +1,6 @@
 #include "memory_resource.hpp"
 
+#include <cassert>
 #include <cstddef>
 #include <limits>
 #include <new>
@@ -14,6 +15,7 @@ namespace {
   bool is_pow2(std::size_t x) noexcept { return x && (x & (x - 1)) == 0; }
 
   std::size_t round_up_pow2(std::size_t n, std::size_t align) noexcept {
+    assert(n <= std::numeric_limits<std::size_t>::max() - (align - 1));
     return (n + (align - 1)) & ~(align - 1);
   }
 
