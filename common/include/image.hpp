@@ -13,7 +13,6 @@
 #include "memory_resource.hpp"
 #include "pitched_element.hpp"
 #include "tiled_image_view.hpp"
-#include "unique_array.hpp"
 
 namespace gpu_lab {
   template <PitchedElement T, MemoryLocation Loc>
@@ -21,7 +20,6 @@ namespace gpu_lab {
     using resource_type = detail::DefaultMemoryResource<Loc>;
 
   public:
-    using handle_type = UniqueArray<T, Loc>;
     using element_type = T;
     using view_type = ImageView<T, Loc>;
     using const_view_type = ImageView<const T, Loc>;
