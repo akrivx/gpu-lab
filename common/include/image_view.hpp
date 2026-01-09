@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cuda/std/array>
 #include <cuda/std/mdspan>
+#include <cuda/std/utility>
 
 #include <cuda_runtime.h>
 
