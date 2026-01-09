@@ -10,7 +10,9 @@ namespace gpu_lab {
   namespace detail {
     struct EventDeleter {
       using pointer = cudaEvent_t;
-      void operator()(cudaEvent_t e) const noexcept { cudaEventDestroy(e); }
+      void operator()(cudaEvent_t e) const noexcept {
+        CUDA_CHECK_TERMINATE(cudaEventDestroy(e));
+      }
     };
 
     using UniqueEvent = std::unique_ptr<cudaEvent_t, detail::EventDeleter>;

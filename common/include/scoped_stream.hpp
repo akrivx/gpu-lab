@@ -10,7 +10,9 @@ namespace gpu_lab {
   namespace detail {
     struct StreamDeleter {
       using pointer = cudaStream_t;
-      void operator()(cudaStream_t s) const noexcept { cudaStreamDestroy(s); }
+      void operator()(cudaStream_t s) const noexcept {
+        CUDA_CHECK_TERMINATE(cudaStreamDestroy(s));
+      }
     };
 
     using UniqueStream = std::unique_ptr<cudaStream_t, detail::StreamDeleter>;
