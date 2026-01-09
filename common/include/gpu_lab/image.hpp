@@ -18,8 +18,6 @@
 namespace gpu_lab {
   template <PitchedElement T, MemoryLocation Loc>
   class [[nodiscard]] Image {
-    using resource_type = detail::DefaultMemoryResource<Loc>;
-
   public:
     using element_type = T;
     using view_type = ImageView<T, Loc>;
@@ -79,7 +77,7 @@ namespace gpu_lab {
     }
 
   private:
-    detail::StridedByteStorage<resource_type> storage_ = {};
+    detail::DefaultStridedByteStorage<Loc> storage_ = {};
     std::size_t width_ = {};
     std::size_t pitch_ = {};
   };

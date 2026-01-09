@@ -19,8 +19,6 @@ namespace gpu_lab {
 
   template <BufferElement T, MemoryLocation Loc>
   class [[nodiscard]] Buffer {
-    using resource_type = detail::DefaultMemoryResource<Loc>;
-
   public:
     using element_type = T;
     using view_type = BufferView<T, Loc>;
@@ -68,7 +66,7 @@ namespace gpu_lab {
     const_view_type cview() const noexcept { return as_const(view()); }
 
   private:
-    detail::ByteStorage<resource_type> storage_ = {};
+    detail::DefaultByteStorage<Loc> storage_ = {};
     std::size_t size_ = 0;
   };
 

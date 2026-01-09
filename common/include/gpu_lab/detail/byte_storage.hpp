@@ -3,7 +3,10 @@
 #include <cstddef>
 #include <utility>
 
+#include "gpu_lab/memory_location.hpp"
+
 #include "gpu_lab/detail/byte_storage_traits.hpp"
+#include "gpu_lab/detail/memory_resource.hpp"
 #include "gpu_lab/detail/memory_resource_concepts.hpp"
 
 namespace gpu_lab::detail {
@@ -43,7 +46,7 @@ namespace gpu_lab::detail {
     {
       return Traits::stride_bytes(alloc_);
     }
-    
+
     std::size_t block_bytes() const noexcept
       requires(Traits::is_strided)
     {
@@ -71,4 +74,10 @@ namespace gpu_lab::detail {
 
   template <StridedByteResource Resource>
   using StridedByteStorage = BasicByteStorage<StridedByteStorageTraits<Resource>>;
+  
+  template <MemoryLocation Loc>
+  using DefaultByteStorage = ByteStorage<DefaultMemoryResource<Loc>>;
+
+  template <MemoryLocation Loc>
+  using DefaultStridedByteStorage = StridedByteStorage<DefaultMemoryResource<Loc>>;
 } // namespace gpu_lab::detail
