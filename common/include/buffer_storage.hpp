@@ -3,14 +3,11 @@
 #include <cstddef>
 #include <utility>
 
-namespace gpu_lab::detail {
-  template <typename Resource>
-  class BufferStorage {
-    static_assert(noexcept(Resource::deallocate_bytes(static_cast<void*>(nullptr),
-                                                      std::size_t{},
-                                                      std::size_t{})),
-                  "BufferStorage: Resource::deallocate_bytes must be noexcept");
+#include "memory_resource_concepts.hpp"
 
+namespace gpu_lab::detail {
+  template <ByteResource Resource>
+  class BufferStorage {
     struct Block {
       void* ptr = nullptr;
       std::size_t size_bytes = 0;
