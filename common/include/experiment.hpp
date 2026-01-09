@@ -4,7 +4,9 @@
 #include <functional>
 #include <iosfwd>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 namespace gpu_lab {
   struct ExperimentResult {
