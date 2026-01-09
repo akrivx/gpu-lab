@@ -1,4 +1,4 @@
-#include "experiment.hpp"
+#include "gpu_lab/experiment.hpp"
 
 #include <format>
 #include <ostream>

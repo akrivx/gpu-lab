@@ -4,7 +4,7 @@
 
 #include <cuda_runtime.h>
 
-#include "buffer_view.hpp"
+#include "gpu_lab/buffer_view.hpp"
 
 namespace gpu_lab {
   void launch_memcpy_kernel(dim3 grid,

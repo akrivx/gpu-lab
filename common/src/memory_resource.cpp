@@ -1,4 +1,4 @@
-#include "memory_resource.hpp"
+#include "gpu_lab/memory_resource.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -8,8 +8,8 @@
 
 #include <cuda_runtime.h>
 
-#include "cuda_check.hpp"
-#include "memory_location.hpp"
+#include "gpu_lab/cuda_check.hpp"
+#include "gpu_lab/memory_location.hpp"
 
 namespace {
   bool is_pow2(std::size_t x) noexcept { return x && (x & (x - 1)) == 0; }

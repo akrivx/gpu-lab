@@ -5,8 +5,8 @@
 
 #include <gtest/gtest.h>
 
-#include "buffer.hpp"
-#include "memory_location.hpp"
+#include "gpu_lab/buffer.hpp"
+#include "gpu_lab/memory_location.hpp"
 
 using namespace gpu_lab;
 

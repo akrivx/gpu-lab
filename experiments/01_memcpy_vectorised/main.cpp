@@ -7,12 +7,13 @@
 
 #include <cuda_runtime.h>
 
-#include "buffer.hpp"
-#include "buffer_view.hpp"
-#include "cuda_check.hpp"
-#include "experiment.hpp"
+#include "gpu_lab/buffer.hpp"
+#include "gpu_lab/buffer_view.hpp"
+#include "gpu_lab/cuda_check.hpp"
+#include "gpu_lab/experiment.hpp"
+#include "gpu_lab/with_timer.hpp"
+
 #include "kernels.cuh"
-#include "with_timer.hpp"
 
 using namespace gpu_lab;
 

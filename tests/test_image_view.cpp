@@ -3,10 +3,11 @@
 #include <gtest/gtest.h>
 
 #include "gpu_lab_config.hpp" // generated in the build dir
-#include "image.hpp"
-#include "image_view.hpp"
-#include "memory_location.hpp"
-#include "tiled_image_view.hpp"
+
+#include "gpu_lab/image.hpp"
+#include "gpu_lab/image_view.hpp"
+#include "gpu_lab/memory_location.hpp"
+#include "gpu_lab/tiled_image_view.hpp"
 
 
 using namespace gpu_lab;
