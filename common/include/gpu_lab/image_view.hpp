@@ -7,8 +7,8 @@
 
 #include <cuda_runtime.h>
 
-#include "memory_location.hpp"
-#include "pitched_element.hpp"
+#include "gpu_lab/memory_location.hpp"
+#include "gpu_lab/pitched_element.hpp"
 
 namespace gpu_lab {
   namespace detail {

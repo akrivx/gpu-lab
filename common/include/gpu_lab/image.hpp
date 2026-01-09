@@ -7,12 +7,12 @@
 
 #include <cuda_runtime.h>
 
-#include "byte_storage.hpp"
-#include "image_view.hpp"
-#include "memory_location.hpp"
-#include "memory_resource.hpp"
-#include "pitched_element.hpp"
-#include "tiled_image_view.hpp"
+#include "gpu_lab/byte_storage.hpp"
+#include "gpu_lab/image_view.hpp"
+#include "gpu_lab/memory_location.hpp"
+#include "gpu_lab/memory_resource.hpp"
+#include "gpu_lab/pitched_element.hpp"
+#include "gpu_lab/tiled_image_view.hpp"
 
 namespace gpu_lab {
   template <PitchedElement T, MemoryLocation Loc>

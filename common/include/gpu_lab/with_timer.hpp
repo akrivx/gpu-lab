@@ -8,7 +8,7 @@
 
 #include <cuda_runtime.h>
 
-#include "scoped_event.hpp"
+#include "gpu_lab/scoped_event.hpp"
 
 namespace gpu_lab {
   /// @brief Measures the GPU execution time of a callable using CUDA events.

@@ -2,8 +2,8 @@
 
 #include <cstddef>
 
-#include "memory_location.hpp"
-#include "strided_bytes.hpp"
+#include "gpu_lab/memory_location.hpp"
+#include "gpu_lab/strided_bytes.hpp"
 
 namespace gpu_lab::detail {
   struct HostMemoryResource {

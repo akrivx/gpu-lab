@@ -3,7 +3,7 @@
 #include <concepts>
 #include <cstddef>
 
-#include "strided_bytes.hpp"
+#include "gpu_lab/strided_bytes.hpp"
 
 namespace gpu_lab::detail {
   template <typename R>

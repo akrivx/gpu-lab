@@ -4,7 +4,7 @@
 
 #include <cuda_runtime.h>
 
-#include "cuda_check.hpp"
+#include "gpu_lab/cuda_check.hpp"
 
 namespace gpu_lab {
   namespace detail {

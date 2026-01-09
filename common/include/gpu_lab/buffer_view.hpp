@@ -8,8 +8,8 @@
 
 #include <cuda_runtime.h>
 
-#include "cuda_check.hpp"
-#include "memory_location.hpp"
+#include "gpu_lab/cuda_check.hpp"
+#include "gpu_lab/memory_location.hpp"
 
 namespace gpu_lab {
   template <typename T, MemoryLocation Loc>

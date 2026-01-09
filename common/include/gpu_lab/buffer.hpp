@@ -7,10 +7,10 @@
 
 #include <cuda_runtime.h>
 
-#include "buffer_view.hpp"
-#include "byte_storage.hpp"
-#include "memory_location.hpp"
-#include "memory_resource.hpp"
+#include "gpu_lab/buffer_view.hpp"
+#include "gpu_lab/byte_storage.hpp"
+#include "gpu_lab/memory_location.hpp"
+#include "gpu_lab/memory_resource.hpp"
 
 namespace gpu_lab {
   template <typename T>
